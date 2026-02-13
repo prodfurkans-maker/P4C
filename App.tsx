@@ -111,10 +111,9 @@ const App: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // Sadece kullanıcı ve bot arasındaki aktif diyalogu al (Karşılama mesajını filtreler)
       const sessionMessages = updatedSessions.find(s => s.id === currentSessionId)?.messages || [];
       const history = sessionMessages
-        .filter(msg => msg.id !== 'welcome') // Hoşgeldin mesajını API geçmişinden çıkarıyoruz (User ile başlaması şart)
+        .filter(msg => msg.id !== 'welcome')
         .slice(-10)
         .map(msg => ({
           role: msg.role === 'bot' ? 'model' : 'user',
@@ -134,7 +133,7 @@ const App: React.FC = () => {
         s.id === currentSessionId ? { ...s, messages: [...s.messages, botMessage], updatedAt: Date.now() } : s
       ));
     } catch (error: any) {
-       console.error("Uygulama Hatası:", error);
+       console.error("Critical UI error:", error);
     } finally {
       setIsLoading(false);
     }
@@ -256,7 +255,7 @@ const App: React.FC = () => {
             <Avatar />
             <div>
               <h1 className="text-xl font-black text-white tracking-tight uppercase leading-tight">Düşünen Dostum</h1>
-              <p className="text-[10px] text-indigo-400 font-black uppercase tracking-[0.4em]">NextGenLAB AI Core v3.2</p>
+              <p className="text-[10px] text-indigo-400 font-black uppercase tracking-[0.4em]">NextGenLAB AI Core v3.3</p>
             </div>
           </div>
           <button onClick={() => setIsStarted(false)} className="p-3 rounded-2xl hover:bg-white/10 text-slate-500 transition-colors">
@@ -310,14 +309,6 @@ const App: React.FC = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
                 </svg>
               </button>
-            </div>
-            
-            <div className="flex justify-center mt-6">
-              <div className="flex items-center gap-6">
-                 <p className="text-[10px] text-white/40 uppercase tracking-[0.5em] font-black hover:text-indigo-400 transition-colors">Cognitive Intelligence</p>
-                 <span className="w-1.5 h-1.5 rounded-full bg-white/10"></span>
-                 <p className="text-[10px] text-white/40 uppercase tracking-[0.5em] font-black hover:text-indigo-400 transition-colors">P4C Architecture</p>
-              </div>
             </div>
           </form>
         </div>

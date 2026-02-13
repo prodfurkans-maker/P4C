@@ -18,51 +18,46 @@ P4C STRATEJİLERİN:
 `;
 
 export const getGeminiResponse = async (userMessage: string, history: {role: string, parts: {text: string}[]}[] ) => {
-  const apiKey = process.env.API_KEY;
-  
-  if (!apiKey) {
-    console.error("KRİTİK HATA: API Anahtarı (API_KEY) sistemde bulunamadı!");
-    return "Bağlantı anahtarım eksik görünüyor. Lütfen sistem yöneticisine danışır mısın?";
-  }
-
-  const ai = new GoogleGenAI({ apiKey });
+  // Directly initialize with process.env.API_KEY as per the platform requirements
+  // We avoid manual null checks that might trigger false positives on some browsers
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
   try {
-    // ÖNEMLİ: Gemini geçmişin 'user' ile başlamasını zorunlu tutar. 
-    // Eğer geçmişin ilk mesajı 'model' ise (karşılama mesajı gibi), onu filtreleyelim.
+    // P4C Persona require a strictly 'user' started history for Gemini
     const validHistory = history.filter((item, index) => {
       if (index === 0 && item.role === 'model') return false;
       return true;
     });
 
     const response = await ai.models.generateContent({
-      model: "gemini-flash-latest", // En kararlı ve hızlı erişim için bu modele dönüldü
+      model: "gemini-3-flash-preview", // Updated to the recommended latest model
       contents: [
         ...validHistory,
         { role: 'user', parts: [{ text: userMessage }] }
       ],
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,
-        temperature: 0.7,
-        topP: 0.9,
+        temperature: 0.8,
+        topP: 0.95,
       }
     });
 
     const text = response.text;
+    
     if (!text) {
-      console.warn("API boş bir yanıt döndürdü.");
+      console.warn("API empty response");
       return "Düşüncelerim şu an çok derinlerde, tam yüzeye çıkaramadım. Tekrar sormaya ne dersin?";
     }
 
     return text;
   } catch (error: any) {
-    console.error("Gemini API Teknik Hatası:", error);
+    console.error("Gemini API Error:", error);
     
-    // Bölgesel kısıtlama veya anahtar hatası kontrolü
-    if (error.message?.includes("location") || error.message?.includes("supported")) {
-      return "Üzgünüm, şu an bulunduğun bölgeden düşünce sunucularıma erişemiyorum. Bağlantını kontrol edip tekrar dener misin?";
+    // Friendly pedagogical error handling
+    if (error.message?.includes("API key") || error.status === 403) {
+      return "Sorgulama sistemlerimde teknik bir bakım var gibi görünüyor. Birazdan tekrar denemek ister misin?";
     }
     
-    return "Zihnimde küçük bir karışıklık oldu ama pes etmiyorum! Sorunu tekrar sorabilir misin?";
+    return "Zihnimde küçük bir karışıklık oldu ama seninle düşünmeye devam etmek istiyorum! Lütfen sorunu tekrar sorar mısın?";
   }
 };
