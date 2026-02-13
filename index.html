@@ -7,7 +7,6 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Düşünen Yapay Zeka PRO | NextGenLAB</title>
-    <link rel="icon" type="image/png" href="https://i.ibb.co/LztfH3d/image.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;400;600;800&display=swap" rel="stylesheet">
     <style>
@@ -22,31 +21,47 @@
             -webkit-tap-highlight-color: transparent;
         }
         
-        /* Gelişmiş Arka Plan Katmanları */
+        /* Modern Dinamik Arka Plan */
         .bg-mesh {
             position: fixed;
             inset: 0;
             background-image: 
-                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
-                radial-gradient(at 100% 0%, rgba(67, 56, 202, 0.1) 0px, transparent 50%),
-                radial-gradient(at 100% 100%, rgba(79, 70, 229, 0.1) 0px, transparent 50%),
-                radial-gradient(at 0% 100%, rgba(30, 27, 75, 0.2) 0px, transparent 50%);
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.12) 0px, transparent 55%),
+                radial-gradient(at 100% 0%, rgba(67, 56, 202, 0.08) 0px, transparent 50%),
+                radial-gradient(at 80% 80%, rgba(79, 70, 229, 0.1) 0px, transparent 50%);
+            z-index: -2;
+        }
+
+        .bg-animate-blob {
+            position: fixed;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.05) 0%, transparent 70%);
+            border-radius: 50%;
+            filter: blur(80px);
             z-index: -1;
+            animation: blob-move 25s infinite alternate ease-in-out;
+        }
+
+        @keyframes blob-move {
+            0% { transform: translate(-10%, -10%) scale(1); }
+            100% { transform: translate(30%, 20%) scale(1.2); }
         }
 
         .bg-dots {
             position: fixed;
             inset: 0;
-            background-image: radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-            background-size: 40px 40px;
+            background-image: radial-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 32px 32px;
             z-index: -1;
+            mask-image: linear-gradient(to bottom, black, transparent);
         }
 
         .glass {
-            background: rgba(15, 23, 42, 0.4);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            background: rgba(15, 23, 42, 0.5);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
         }
 
         .text-gradient {
@@ -55,18 +70,17 @@
             -webkit-text-fill-color: transparent;
         }
 
-        .custom-scrollbar::-webkit-scrollbar { width: 3px; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: rgba(99, 102, 241, 0.15);
-            border-radius: 10px;
+            background: rgba(99, 102, 241, 0.1);
+            border-radius: 20px;
         }
         
         @keyframes float {
-            0% { transform: translateY(0px) rotate(0deg); }
-            50% { transform: translateY(-15px) rotate(2deg); }
-            100% { transform: translateY(0px) rotate(0deg); }
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(1deg); }
         }
-        .animate-float { animation: float 10s ease-in-out infinite; }
+        .animate-float { animation: float 8s ease-in-out infinite; }
 
         .sidebar-transition { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
     </style>
@@ -85,6 +99,8 @@
 </head>
 <body>
     <div class="bg-mesh"></div>
+    <div class="bg-animate-blob" style="top: -100px; left: -100px;"></div>
+    <div class="bg-animate-blob" style="bottom: -100px; right: -100px; animation-delay: -5s;"></div>
     <div class="bg-dots"></div>
     <div id="root"></div>
     <script type="module" src="./index.tsx"></script>

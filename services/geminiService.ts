@@ -1,4 +1,6 @@
 
+import { GoogleGenAI } from "@google/genai";
+
 const SYSTEM_INSTRUCTION = `
 Sen "Düşünen Yapay Zeka" adında, dünya standartlarında bir P4C (Çocuklar için Felsefe) uzmanısın.
 
@@ -12,56 +14,34 @@ P4C STRATEJİLERİN:
 - En fazla 3 kısa cümle kullan.
 - Çocuğa empati yaptır ve ucu açık bir soru sor.
 - "Sence", "Neden", "Başka bir açıdan bakarsak" gibi ifadeler kullan.
+- Amacın çocuğun kendi cevabını bulmasını sağlamak, bilgi vermek değil düşünce üretmektir.
 `;
 
 export const getGeminiResponse = async (userMessage: string, history: {role: string, parts: {text: string}[]}[] ) => {
-  // LocalStorage'dan Groq Key'i al
-  const apiKey = localStorage.getItem('GROQ_API_KEY');
+  // Use the API key from process.env directly as per requirements
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
-  if (!apiKey) {
-    throw new Error("API_KEY_MISSING");
-  }
-
-  // Groq API OpenAI uyumlu bir endpoint kullanır
-  const url = "https://api.groq.com/openai/v1/chat/completions";
-  
-  // Geçmişi Groq formatına çevir
-  const messages = [
-    { role: "system", content: SYSTEM_INSTRUCTION },
-    ...history.map(h => ({
-      role: h.role === "model" ? "assistant" : "user",
-      content: h.parts[0].text
-    })),
-    { role: "user", content: userMessage }
-  ];
-
   try {
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
-        messages: messages,
-        temperature: 0.7,
-        max_tokens: 1024,
-        top_p: 1
-      })
+    const response = await ai.models.generateContent({
+      model: "gemini-3-pro-preview",
+      contents: [
+        ...history.map(h => ({
+          role: h.role,
+          parts: [{ text: h.parts[0].text }]
+        })),
+        { role: 'user', parts: [{ text: userMessage }] }
+      ],
+      config: {
+        systemInstruction: SYSTEM_INSTRUCTION,
+        temperature: 0.8,
+        topP: 0.95,
+        topK: 40,
+      }
     });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      if (response.status === 401) throw new Error("API_KEY_INVALID");
-      throw new Error(errorData.error?.message || "GROQ_ERROR");
-    }
-
-    const data = await response.json();
-    return data.choices[0]?.message?.content || "Düşüncelerim şu an çok derinlerde...";
+    return response.text || "Düşüncelerim şu an çok derinlerde...";
   } catch (error: any) {
-    console.error("Groq API Error:", error);
-    if (error.message === "API_KEY_INVALID") throw error;
-    return "Bağlantım biraz zayıfladı, gel tekrar deneyelim!";
+    console.error("Gemini API Error:", error);
+    return "Bağlantım biraz zayıfladı, zihnimi toparlayıp geliyorum. Tekrar dener misin?";
   }
 };
