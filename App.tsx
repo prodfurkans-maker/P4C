@@ -55,7 +55,7 @@ const App: React.FC = () => {
       messages: [{
         id: 'welcome',
         role: 'bot',
-        text: 'Merhaba zihin ortağım! Bugün zihninin derinliklerinde hangi merak dolu "Acaba?" sorusu yankılanıyor? Gel, beraber bir düşünce yolculuğuna çıkalım.',
+        text: 'Merhaba zihin ortağım! Bugün birlikte hangi merak dolu "Acaba?" sorusunun peşinden gidelim istersin?',
         timestamp: Date.now(),
       }],
       updatedAt: Date.now(),
@@ -253,7 +253,7 @@ const App: React.FC = () => {
             <Avatar />
             <div>
               <h1 className="text-xl font-black text-white tracking-tight uppercase leading-tight">Düşünen Dostum</h1>
-              <p className="text-[10px] text-indigo-400 font-black uppercase tracking-[0.4em]">NextGenLAB AI Core v3.0</p>
+              <p className="text-[10px] text-indigo-400 font-black uppercase tracking-[0.4em]">NextGenLAB AI Core v3.1</p>
             </div>
           </div>
           <button onClick={() => setIsStarted(false)} className="p-3 rounded-2xl hover:bg-white/10 text-slate-500 transition-colors">
@@ -289,13 +289,13 @@ const App: React.FC = () => {
 
         <div className="absolute bottom-0 left-0 w-full p-8 bg-gradient-to-t from-[#020617] via-[#020617]/95 to-transparent pt-20">
           <form onSubmit={handleSend} className="max-w-4xl mx-auto relative group">
-            <div className="relative flex items-center gap-3 p-2 bg-white/[0.05] border border-white/20 rounded-[3rem] backdrop-blur-3xl shadow-[0_40px_80px_-20px_rgba(0,0,0,0.6)] transition-all focus-within:border-indigo-500/50 focus-within:bg-white/[0.08] focus-within:shadow-[0_0_50px_rgba(99,102,241,0.25)] group-hover:border-white/30">
+            <div className="relative flex items-center gap-3 p-2 bg-white/[0.08] border border-white/30 rounded-[3rem] backdrop-blur-3xl shadow-[0_40px_80px_-20px_rgba(0,0,0,0.6)] transition-all focus-within:border-indigo-500/60 focus-within:bg-white/[0.12] focus-within:shadow-[0_0_60px_rgba(99,102,241,0.3)] group-hover:border-white/40">
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Buraya bir 'Acaba?' bırak..."
-                className="flex-1 bg-transparent py-5 px-8 outline-none text-white placeholder:text-slate-400 text-lg md:text-xl font-semibold tracking-tight transition-all"
+                placeholder="Buraya merak dolu bir 'Acaba?' bırak..."
+                className="flex-1 bg-transparent py-5 px-8 outline-none text-white placeholder:text-white/40 text-lg md:text-xl font-semibold tracking-tight transition-all"
                 disabled={isLoading || !currentSessionId}
               />
               <button 
@@ -311,9 +311,9 @@ const App: React.FC = () => {
             
             <div className="flex justify-center mt-6">
               <div className="flex items-center gap-6">
-                 <p className="text-[10px] text-slate-500 uppercase tracking-[0.5em] font-black hover:text-indigo-400 transition-colors">Cognitive Intelligence</p>
-                 <span className="w-1.5 h-1.5 rounded-full bg-slate-700"></span>
-                 <p className="text-[10px] text-slate-500 uppercase tracking-[0.5em] font-black hover:text-indigo-400 transition-colors">P4C Architecture</p>
+                 <p className="text-[10px] text-white/40 uppercase tracking-[0.5em] font-black hover:text-indigo-400 transition-colors">Cognitive Intelligence</p>
+                 <span className="w-1.5 h-1.5 rounded-full bg-white/10"></span>
+                 <p className="text-[10px] text-white/40 uppercase tracking-[0.5em] font-black hover:text-indigo-400 transition-colors">P4C Architecture</p>
               </div>
             </div>
           </form>

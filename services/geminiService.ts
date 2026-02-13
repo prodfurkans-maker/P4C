@@ -18,12 +18,12 @@ P4C STRATEJİLERİN:
 `;
 
 export const getGeminiResponse = async (userMessage: string, history: {role: string, parts: {text: string}[]}[] ) => {
-  // Use the API key from process.env directly as per requirements
+  // Always initialize with the current process.env.API_KEY to ensure accessibility
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-3-pro-preview",
+      model: "gemini-3-flash-preview", // Changed to flash for better global availability and speed
       contents: [
         ...history.map(h => ({
           role: h.role,
@@ -33,15 +33,19 @@ export const getGeminiResponse = async (userMessage: string, history: {role: str
       ],
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,
-        temperature: 0.8,
+        temperature: 0.75,
         topP: 0.95,
-        topK: 40,
       }
     });
 
-    return response.text || "Düşüncelerim şu an çok derinlerde...";
+    if (!response.text) {
+      throw new Error("Boş yanıt döndü.");
+    }
+
+    return response.text;
   } catch (error: any) {
-    console.error("Gemini API Error:", error);
-    return "Bağlantım biraz zayıfladı, zihnimi toparlayıp geliyorum. Tekrar dener misin?";
+    console.error("Gemini API Error Detail:", error);
+    // User-friendly fallback messages based on common P4C persona
+    return "Zihnimde küçük bir fırtına koptu, bu yüzden şu an düşüncelerimi toparlayamadım. Bana tekrar sorar mısın?";
   }
 };
