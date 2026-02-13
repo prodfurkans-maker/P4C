@@ -18,47 +18,74 @@
             color: #f8fafc;
             margin: 0;
             padding: 0;
-            overflow-x: hidden;
+            overflow: hidden;
             -webkit-tap-highlight-color: transparent;
         }
-        .glass {
-            background: rgba(15, 23, 42, 0.6);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+        
+        /* Gelişmiş Arka Plan Katmanları */
+        .bg-mesh {
+            position: fixed;
+            inset: 0;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(67, 56, 202, 0.1) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(79, 70, 229, 0.1) 0px, transparent 50%),
+                radial-gradient(at 0% 100%, rgba(30, 27, 75, 0.2) 0px, transparent 50%);
+            z-index: -1;
         }
+
+        .bg-dots {
+            position: fixed;
+            inset: 0;
+            background-image: radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            z-index: -1;
+        }
+
+        .glass {
+            background: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
         .text-gradient {
-            background: linear-gradient(to bottom right, #ffffff 30%, #6366f1 70%, #4338ca 100%);
+            background: linear-gradient(to bottom right, #ffffff 40%, #818cf8 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 3px; }
         .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: rgba(99, 102, 241, 0.2);
+            background: rgba(99, 102, 241, 0.15);
             border-radius: 10px;
         }
-        @keyframes aurora {
-            0% { transform: translate(0,0) scale(1); opacity: 0.3; }
-            50% { transform: translate(5%, 5%) scale(1.1); opacity: 0.5; }
-            100% { transform: translate(0,0) scale(1); opacity: 0.3; }
+        
+        @keyframes float {
+            0% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-15px) rotate(2deg); }
+            100% { transform: translateY(0px) rotate(0deg); }
         }
-        .animate-aurora { animation: aurora 15s ease-in-out infinite; }
-        .sidebar-transition { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .animate-float { animation: float 10s ease-in-out infinite; }
+
+        .sidebar-transition { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
     </style>
     <script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react@^19.2.4",
-    "react-dom": "https://esm.sh/react-dom@^19.2.4",
-    "react-dom/client": "https://esm.sh/react-dom@^19.2.4/client",
-    "@google/genai": "https://esm.sh/@google/genai@^1.41.0",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
-    "react/": "https://esm.sh/react@^19.2.4/"
-  }
-}
-</script>
+    {
+      "imports": {
+        "react": "https://esm.sh/react@^19.2.4",
+        "react-dom": "https://esm.sh/react-dom@^19.2.4",
+        "react-dom/client": "https://esm.sh/react-dom@^19.2.4/client",
+        "@google/genai": "https://esm.sh/@google/genai@^1.41.0",
+        "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+        "react/": "https://esm.sh/react@^19.2.4/"
+      }
+    }
+    </script>
 </head>
 <body>
+    <div class="bg-mesh"></div>
+    <div class="bg-dots"></div>
     <div id="root"></div>
     <script type="module" src="./index.tsx"></script>
 </body>
