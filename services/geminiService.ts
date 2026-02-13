@@ -18,19 +18,23 @@ P4C STRATEJİLERİN:
 `;
 
 export const getGeminiResponse = async (userMessage: string, history: {role: string, parts: {text: string}[]}[] ) => {
-  // Directly initialize with process.env.API_KEY as per the platform requirements
-  // We avoid manual null checks that might trigger false positives on some browsers
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const apiKey = process.env.API_KEY;
+  
+  if (!apiKey) {
+    throw new Error("MISSING_API_KEY");
+  }
+
+  // Create instance right before call as per guidelines
+  const ai = new GoogleGenAI({ apiKey });
   
   try {
-    // P4C Persona require a strictly 'user' started history for Gemini
     const validHistory = history.filter((item, index) => {
       if (index === 0 && item.role === 'model') return false;
       return true;
     });
 
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview", // Updated to the recommended latest model
+      model: "gemini-3-flash-preview",
       contents: [
         ...validHistory,
         { role: 'user', parts: [{ text: userMessage }] }
@@ -42,22 +46,12 @@ export const getGeminiResponse = async (userMessage: string, history: {role: str
       }
     });
 
-    const text = response.text;
-    
-    if (!text) {
-      console.warn("API empty response");
-      return "Düşüncelerim şu an çok derinlerde, tam yüzeye çıkaramadım. Tekrar sormaya ne dersin?";
-    }
-
-    return text;
+    return response.text || "Düşüncelerimi toparlayamadım, tekrar sorar mısın?";
   } catch (error: any) {
     console.error("Gemini API Error:", error);
-    
-    // Friendly pedagogical error handling
-    if (error.message?.includes("API key") || error.status === 403) {
-      return "Sorgulama sistemlerimde teknik bir bakım var gibi görünüyor. Birazdan tekrar denemek ister misin?";
+    if (error.message?.includes("not found") || error.status === 404) {
+      throw new Error("KEY_INVALID");
     }
-    
-    return "Zihnimde küçük bir karışıklık oldu ama seninle düşünmeye devam etmek istiyorum! Lütfen sorunu tekrar sorar mısın?";
+    throw error;
   }
 };

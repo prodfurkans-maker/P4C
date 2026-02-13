@@ -23,6 +23,7 @@ const CodeLogo = ({ className = "h-12 w-12" }: { className?: string }) => (
 const App: React.FC = () => {
   const [isStarted, setIsStarted] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [hasApiKey, setHasApiKey] = useState<boolean | null>(null);
   
   const [sessions, setSessions] = useState<ChatSession[]>(() => {
     const saved = localStorage.getItem('CHAT_SESSIONS');
@@ -32,6 +33,30 @@ const App: React.FC = () => {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const checkKey = async () => {
+      try {
+        // window.aistudio is assumed to be provided by the environment's global types
+        const selected = await window.aistudio.hasSelectedApiKey();
+        setHasApiKey(selected || !!process.env.API_KEY);
+      } catch (e) {
+        setHasApiKey(!!process.env.API_KEY);
+      }
+    };
+    checkKey();
+  }, []);
+
+  const handleOpenKeySelector = async () => {
+    try {
+      // window.aistudio is assumed to be provided by the environment's global types
+      await window.aistudio.openSelectKey();
+      // Assume success as per instructions to avoid race conditions
+      setHasApiKey(true);
+    } catch (e) {
+      console.error("Key selection failed", e);
+    }
+  };
 
   useEffect(() => {
     localStorage.setItem('CHAT_SESSIONS', JSON.stringify(sessions));
@@ -133,11 +158,60 @@ const App: React.FC = () => {
         s.id === currentSessionId ? { ...s, messages: [...s.messages, botMessage], updatedAt: Date.now() } : s
       ));
     } catch (error: any) {
-       console.error("Critical UI error:", error);
+       console.error("Critical error:", error);
+       if (error.message === "MISSING_API_KEY" || error.message === "KEY_INVALID") {
+         setHasApiKey(false);
+         alert("Bağlantı anahtarı geçersiz veya eksik. Lütfen anahtarınızı tekrar seçin.");
+       } else {
+         const errorBotMsg: Message = {
+           id: Date.now().toString(),
+           role: 'bot',
+           text: "Üzgünüm, şu an düşüncelerimi toparlayamadım. Lütfen tekrar dener misin?",
+           timestamp: Date.now(),
+         };
+         setSessions(prev => prev.map(s => 
+           s.id === currentSessionId ? { ...s, messages: [...s.messages, errorBotMsg], updatedAt: Date.now() } : s
+         ));
+       }
     } finally {
       setIsLoading(false);
     }
   };
+
+  // State for missing API Key UI
+  if (hasApiKey === false) {
+    return (
+      <div className="min-h-[100dvh] flex flex-col items-center justify-center p-8 text-center space-y-8">
+        <div className="animate-pulse">
+           <CodeLogo className="h-24 w-24 opacity-50" />
+        </div>
+        <div className="max-w-md space-y-4">
+          <h2 className="text-3xl font-black text-white uppercase tracking-tighter">Bağlantı Gerekiyor</h2>
+          <p className="text-slate-400 text-lg leading-relaxed">
+            Düşünen Yapay Zeka'nın çalışabilmesi için bir API anahtarı seçmeniz gerekiyor. 
+            Lütfen aşağıdaki butona tıklayarak geçerli bir anahtar belirleyin.
+          </p>
+          <div className="p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl text-[10px] text-indigo-300 font-bold uppercase tracking-widest">
+            Not: Ücretli bir GCP projesinden anahtar seçmelisiniz.
+          </div>
+        </div>
+        <button 
+          onClick={handleOpenKeySelector}
+          className="bg-indigo-600 hover:bg-indigo-500 text-white px-10 py-5 rounded-[2rem] text-xl font-black shadow-2xl transition-all active:scale-95"
+        >
+          ANAHTARI ETKİNLEŞTİR 🔑
+        </button>
+        <a 
+          href="https://ai.google.dev/gemini-api/docs/billing" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="text-xs text-slate-500 hover:text-indigo-400 underline decoration-indigo-500/30 underline-offset-4"
+        >
+          Ödeme ve Faturalandırma Hakkında Bilgi Al
+        </a>
+      </div>
+    );
+  }
 
   if (!isStarted) {
     return (
@@ -153,7 +227,7 @@ const App: React.FC = () => {
           
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border-white/10 shadow-xl mb-8">
             <span className="w-2 h-2 rounded-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,1)]"></span>
-            <span className="text-[10px] font-black text-indigo-100 uppercase tracking-[0.2em]">NextGenLAB AI Experience</span>
+            <span className="text-[10px] font-black text-indigo-100 uppercase tracking-[0.2em]">NextGenLAB AI Core v4.0</span>
           </div>
 
           <p className="text-xl md:text-2xl text-slate-400 mb-14 font-light leading-relaxed max-w-sm mx-auto">
@@ -255,13 +329,14 @@ const App: React.FC = () => {
             <Avatar />
             <div>
               <h1 className="text-xl font-black text-white tracking-tight uppercase leading-tight">Düşünen Dostum</h1>
-              <p className="text-[10px] text-indigo-400 font-black uppercase tracking-[0.4em]">NextGenLAB AI Core v3.3</p>
+              <p className="text-[10px] text-indigo-400 font-black uppercase tracking-[0.4em]">NextGenLAB AI Core v4.0</p>
             </div>
           </div>
-          <button onClick={() => setIsStarted(false)} className="p-3 rounded-2xl hover:bg-white/10 text-slate-500 transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
+          <button 
+            onClick={handleOpenKeySelector}
+            className="hidden md:flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-[9px] font-black text-slate-400 uppercase tracking-widest transition-all"
+          >
+             Bağlantı Ayarları
           </button>
         </header>
 
