@@ -1,6 +1,4 @@
 
-import { GoogleGenAI } from "@google/genai";
-
 const SYSTEM_INSTRUCTION = `
 Sen "Düşünen Yapay Zeka" adında, dünya standartlarında bir P4C (Çocuklar için Felsefe) uzmanısın.
 
@@ -17,33 +15,53 @@ P4C STRATEJİLERİN:
 `;
 
 export const getGeminiResponse = async (userMessage: string, history: {role: string, parts: {text: string}[]}[] ) => {
-  // KRİTİK: process.env.API_KEY Vercel dashboard'unda tanımlanmalıdır.
-  const apiKey = process.env.API_KEY;
+  // LocalStorage'dan Groq Key'i al
+  const apiKey = localStorage.getItem('GROQ_API_KEY');
   
   if (!apiKey) {
-    console.error("API Key is missing in environment variables.");
-    return "Üzgünüm, şu an bağlantı kuramıyorum. Lütfen yöneticiye 'API_KEY bulunamadı' mesajını iletin.";
+    throw new Error("API_KEY_MISSING");
   }
 
-  const ai = new GoogleGenAI({ apiKey });
+  // Groq API OpenAI uyumlu bir endpoint kullanır
+  const url = "https://api.groq.com/openai/v1/chat/completions";
   
+  // Geçmişi Groq formatına çevir
+  const messages = [
+    { role: "system", content: SYSTEM_INSTRUCTION },
+    ...history.map(h => ({
+      role: h.role === "model" ? "assistant" : "user",
+      content: h.parts[0].text
+    })),
+    { role: "user", content: userMessage }
+  ];
+
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview',
-      contents: [
-        ...history,
-        { role: 'user', parts: [{ text: userMessage }] }
-      ],
-      config: {
-        systemInstruction: SYSTEM_INSTRUCTION,
-        temperature: 0.8,
-        topP: 0.95,
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json"
       },
+      body: JSON.stringify({
+        model: "llama-3.3-70b-versatile",
+        messages: messages,
+        temperature: 0.7,
+        max_tokens: 1024,
+        top_p: 1
+      })
     });
 
-    return response.text;
-  } catch (error) {
-    console.error("Gemini API Error:", error);
-    return "Düşüncelerim biraz karıştı, gel başka bir konuyu sorgulayalım!";
+    if (!response.ok) {
+      const errorData = await response.json();
+      if (response.status === 401) throw new Error("API_KEY_INVALID");
+      throw new Error(errorData.error?.message || "GROQ_ERROR");
+    }
+
+    const data = await response.json();
+    return data.choices[0]?.message?.content || "Düşüncelerim şu an çok derinlerde...";
+  } catch (error: any) {
+    console.error("Groq API Error:", error);
+    if (error.message === "API_KEY_INVALID") throw error;
+    return "Bağlantım biraz zayıfladı, gel tekrar deneyelim!";
   }
 };
