@@ -111,7 +111,10 @@ const App: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const history = (updatedSessions.find(s => s.id === currentSessionId)?.messages || [])
+      // Sadece kullanıcı ve bot arasındaki aktif diyalogu al (Karşılama mesajını filtreler)
+      const sessionMessages = updatedSessions.find(s => s.id === currentSessionId)?.messages || [];
+      const history = sessionMessages
+        .filter(msg => msg.id !== 'welcome') // Hoşgeldin mesajını API geçmişinden çıkarıyoruz (User ile başlaması şart)
         .slice(-10)
         .map(msg => ({
           role: msg.role === 'bot' ? 'model' : 'user',
@@ -131,7 +134,7 @@ const App: React.FC = () => {
         s.id === currentSessionId ? { ...s, messages: [...s.messages, botMessage], updatedAt: Date.now() } : s
       ));
     } catch (error: any) {
-       console.error("Chat error:", error);
+       console.error("Uygulama Hatası:", error);
     } finally {
       setIsLoading(false);
     }
@@ -253,7 +256,7 @@ const App: React.FC = () => {
             <Avatar />
             <div>
               <h1 className="text-xl font-black text-white tracking-tight uppercase leading-tight">Düşünen Dostum</h1>
-              <p className="text-[10px] text-indigo-400 font-black uppercase tracking-[0.4em]">NextGenLAB AI Core v3.1</p>
+              <p className="text-[10px] text-indigo-400 font-black uppercase tracking-[0.4em]">NextGenLAB AI Core v3.2</p>
             </div>
           </div>
           <button onClick={() => setIsStarted(false)} className="p-3 rounded-2xl hover:bg-white/10 text-slate-500 transition-colors">

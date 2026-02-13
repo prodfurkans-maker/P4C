@@ -18,34 +18,51 @@ P4C STRATEJİLERİN:
 `;
 
 export const getGeminiResponse = async (userMessage: string, history: {role: string, parts: {text: string}[]}[] ) => {
-  // Always initialize with the current process.env.API_KEY to ensure accessibility
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const apiKey = process.env.API_KEY;
+  
+  if (!apiKey) {
+    console.error("KRİTİK HATA: API Anahtarı (API_KEY) sistemde bulunamadı!");
+    return "Bağlantı anahtarım eksik görünüyor. Lütfen sistem yöneticisine danışır mısın?";
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
   
   try {
+    // ÖNEMLİ: Gemini geçmişin 'user' ile başlamasını zorunlu tutar. 
+    // Eğer geçmişin ilk mesajı 'model' ise (karşılama mesajı gibi), onu filtreleyelim.
+    const validHistory = history.filter((item, index) => {
+      if (index === 0 && item.role === 'model') return false;
+      return true;
+    });
+
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview", // Changed to flash for better global availability and speed
+      model: "gemini-flash-latest", // En kararlı ve hızlı erişim için bu modele dönüldü
       contents: [
-        ...history.map(h => ({
-          role: h.role,
-          parts: [{ text: h.parts[0].text }]
-        })),
+        ...validHistory,
         { role: 'user', parts: [{ text: userMessage }] }
       ],
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,
-        temperature: 0.75,
-        topP: 0.95,
+        temperature: 0.7,
+        topP: 0.9,
       }
     });
 
-    if (!response.text) {
-      throw new Error("Boş yanıt döndü.");
+    const text = response.text;
+    if (!text) {
+      console.warn("API boş bir yanıt döndürdü.");
+      return "Düşüncelerim şu an çok derinlerde, tam yüzeye çıkaramadım. Tekrar sormaya ne dersin?";
     }
 
-    return response.text;
+    return text;
   } catch (error: any) {
-    console.error("Gemini API Error Detail:", error);
-    // User-friendly fallback messages based on common P4C persona
-    return "Zihnimde küçük bir fırtına koptu, bu yüzden şu an düşüncelerimi toparlayamadım. Bana tekrar sorar mısın?";
+    console.error("Gemini API Teknik Hatası:", error);
+    
+    // Bölgesel kısıtlama veya anahtar hatası kontrolü
+    if (error.message?.includes("location") || error.message?.includes("supported")) {
+      return "Üzgünüm, şu an bulunduğun bölgeden düşünce sunucularıma erişemiyorum. Bağlantını kontrol edip tekrar dener misin?";
+    }
+    
+    return "Zihnimde küçük bir karışıklık oldu ama pes etmiyorum! Sorunu tekrar sorabilir misin?";
   }
 };
