@@ -23,6 +23,7 @@ ZORBALIK, ADALET, PAYLAŞMAK GİBİ KONULARDA:
 `;
 
 export const getGeminiResponse = async (userMessage: string, history: {role: string, parts: {text: string}[]}[] ) => {
+  // Sistem kuralı gereği process.env.API_KEY kullanılır.
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
   try {
@@ -34,7 +35,7 @@ export const getGeminiResponse = async (userMessage: string, history: {role: str
       ],
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,
-        temperature: 0.7, // Güvenlik için biraz daha tutarlı bir yaratıcılık
+        temperature: 0.7,
         topP: 0.9,
       },
     });
@@ -42,6 +43,6 @@ export const getGeminiResponse = async (userMessage: string, history: {role: str
     return response.text;
   } catch (error) {
     console.error("Gemini API Error:", error);
-    return "Şu an düşüncelerimi toparlamakta zorlanıyorum, başka bir şey konuşalım mı?";
+    return "Şu an düşüncelerimi toparlamakta zorlanıyorum, başka bir konuyu merak edelim mi?";
   }
 };

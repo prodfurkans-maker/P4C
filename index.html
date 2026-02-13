@@ -4,9 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Düşünen Yapay Zeka | Geleceğin Zihinleri İçin P4C</title>
+    <title>Düşünen Yapay Zeka PRO | Dünyanın İlk P4C AI</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary: #6366f1;
@@ -19,31 +19,41 @@
             overflow-x: hidden;
         }
         .glass {
-            background: rgba(255, 255, 255, 0.02);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: inset 0 0 20px rgba(255,255,255,0.02);
         }
         .text-gradient {
-            background: linear-gradient(135deg, #fff 0%, #6366f1 50%, #312e81 100%);
+            background: linear-gradient(to bottom right, #ffffff 20%, #6366f1 60%, #1e1b4b 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
-        @keyframes orbit {
-            from { transform: rotate(0deg) translateX(120px) rotate(0deg); }
-            to { transform: rotate(360deg) translateX(120px) rotate(-360deg); }
-        }
-        .orbit-icon {
-            animation: orbit 25s linear infinite;
-        }
         .message-bubble {
-            border-radius: 28px;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 35px;
+            transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
         }
-        ::-webkit-scrollbar { width: 5px; }
-        ::-webkit-scrollbar-track { background: #020617; }
-        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #334155; }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.1);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(99, 102, 241, 0.2);
+            border-radius: 20px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(99, 102, 241, 0.5);
+        }
+        @keyframes subtle-float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        .float-animation {
+            animation: subtle-float 6s ease-in-out infinite;
+        }
     </style>
 <script type="importmap">
 {
