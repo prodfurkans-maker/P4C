@@ -23,7 +23,6 @@ const CodeLogo = ({ className = "h-12 w-12" }: { className?: string }) => (
 const App: React.FC = () => {
   const [isStarted, setIsStarted] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [hasApiKey, setHasApiKey] = useState<boolean | null>(null);
   
   const [sessions, setSessions] = useState<ChatSession[]>(() => {
     const saved = localStorage.getItem('CHAT_SESSIONS');
@@ -33,49 +32,6 @@ const App: React.FC = () => {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  // API Anahtarı kontrolü
-  useEffect(() => {
-    const checkApiKeyStatus = async () => {
-      // 1. Önce sistem değişkenini (Vercel vb.) kontrol et
-      const envKeyAvailable = !!process.env.API_KEY && process.env.API_KEY !== "" && process.env.API_KEY !== "undefined";
-      
-      if (envKeyAvailable) {
-        setHasApiKey(true);
-        return;
-      }
-
-      // 2. Eğer sistem değişkeni yoksa (Yerel geliştirme veya AI Studio ortamı)
-      try {
-        const aistudio = (window as any).aistudio;
-        if (aistudio && typeof aistudio.hasSelectedApiKey === 'function') {
-          const selected = await aistudio.hasSelectedApiKey();
-          setHasApiKey(selected);
-        } else {
-          // Hiçbir anahtar kaynağı bulunamadı
-          setHasApiKey(false);
-        }
-      } catch (e) {
-        setHasApiKey(false);
-      }
-    };
-    checkApiKeyStatus();
-  }, []);
-
-  const handleOpenKeySelector = async () => {
-    try {
-      const aistudio = (window as any).aistudio;
-      if (aistudio && typeof aistudio.openSelectKey === 'function') {
-        // Assume the key selection was successful after triggering openSelectKey() as per guidelines
-        await aistudio.openSelectKey();
-        setHasApiKey(true);
-      } else {
-        alert("Bu ortamda anahtar seçimi desteklenmiyor. Lütfen sistem değişkenlerini kontrol edin.");
-      }
-    } catch (e) {
-      console.error("Anahtar seçim hatası:", e);
-    }
-  };
 
   useEffect(() => {
     localStorage.setItem('CHAT_SESSIONS', JSON.stringify(sessions));
@@ -160,63 +116,19 @@ const App: React.FC = () => {
       ));
     } catch (error: any) {
        console.error("Gönderim Hatası:", error);
-       // Fix: Added check for "Requested entity was not found." as per guidelines
-       if (error.message?.includes("Requested entity was not found.") || error.message === "MISSING_API_KEY" || error.message === "KEY_INVALID") {
-         setHasApiKey(false);
-       } else {
-         const errorBotMsg: Message = {
-           id: Date.now().toString(),
-           role: 'bot',
-           text: "Üzgünüm, şu an bağlantı kuramıyorum. Lütfen tekrar dener misin?",
-           timestamp: Date.now(),
-         };
-         setSessions(prev => prev.map(s => 
-           s.id === currentSessionId ? { ...s, messages: [...s.messages, errorBotMsg], updatedAt: Date.now() } : s
-         ));
-       }
+       const errorBotMsg: Message = {
+         id: Date.now().toString(),
+         role: 'bot',
+         text: "Üzgünüm, şu an bağlantı kuramıyorum. Lütfen internetini kontrol edip tekrar dener misin?",
+         timestamp: Date.now(),
+       };
+       setSessions(prev => prev.map(s => 
+         s.id === currentSessionId ? { ...s, messages: [...s.messages, errorBotMsg], updatedAt: Date.now() } : s
+       ));
     } finally {
       setIsLoading(false);
     }
   };
-
-  if (hasApiKey === null) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#020617]">
-        <div className="flex flex-col items-center gap-6">
-          <CodeLogo className="h-16 w-16 animate-pulse opacity-50" />
-          <p className="text-indigo-400 font-black text-xs uppercase tracking-[0.5em]">Zihin Hazırlanıyor...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (hasApiKey === false) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-8 text-center space-y-12 bg-[#020617] relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-full bg-mesh opacity-40"></div>
-        <div className="z-10 animate-float">
-          <CodeLogo className="h-28 w-28 md:h-36 md:w-36" />
-        </div>
-        <div className="z-10 max-w-xl space-y-6">
-          <h2 className="text-4xl md:text-5xl font-black text-white uppercase tracking-tighter leading-none">
-            BAĞLANTI GEREKLİ
-          </h2>
-          <p className="text-slate-400 text-lg md:text-xl leading-relaxed">
-            Düşünen Yapay Zeka'nın çalışabilmesi için bir API anahtarı tanımlanmalıdır. 
-            Lütfen bir <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noopener noreferrer" className="text-indigo-400 underline font-bold">ücretli GCP projesinden</a> API anahtarı seçin.
-          </p>
-        </div>
-        <div className="z-10 flex flex-col items-center gap-6">
-          <button 
-            onClick={handleOpenKeySelector}
-            className="bg-indigo-600 hover:bg-indigo-500 text-white px-12 py-6 rounded-[2.5rem] text-2xl font-black shadow-[0_20px_50px_rgba(79,70,229,0.4)] transition-all active:scale-95 border border-white/10"
-          >
-            ANAHTARI SEÇ 🔑
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   if (!isStarted) {
     return (
@@ -313,15 +225,6 @@ const App: React.FC = () => {
               </button>
             </div>
           ))}
-        </div>
-
-        <div className="p-6 border-t border-white/5">
-           <button 
-            onClick={handleOpenKeySelector}
-            className="w-full flex items-center justify-center gap-2 py-4 bg-white/5 hover:bg-white/10 border border-white/5 rounded-2xl text-[10px] font-black text-indigo-400 uppercase tracking-widest transition-all active:scale-95"
-           >
-              🔑 Ayarları Güncelle
-           </button>
         </div>
       </aside>
 

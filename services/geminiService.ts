@@ -15,7 +15,8 @@ Asla doğrudan bir doğru/yanlış cevabı dayatma, araştırmacı bir tavır se
 // Fix: Exported member 'getGeminiResponse' implemented using @google/genai guidelines
 export async function getGeminiResponse(prompt: string, history: any[] = []) {
   // Always create a new instance right before the call to ensure the latest API key is used
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  // Assume process.env.API_KEY is pre-configured and valid.
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
   
   // Combine chat history with the current user prompt
   const contents = [
@@ -44,7 +45,6 @@ export async function getGeminiResponse(prompt: string, history: any[] = []) {
     return text;
   } catch (error: any) {
     console.error("Gemini API Hatası:", error);
-    // Propagate error for UI handling
     throw error;
   }
 }
