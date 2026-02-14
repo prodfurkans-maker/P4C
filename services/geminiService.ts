@@ -1,32 +1,22 @@
 
 import { GoogleGenAI } from "@google/genai";
 
-/**
- * P4C (Philosophy for Children) Uzman Personası
- * Bu talimat setini değiştirmeyin; AI'nın "çok akıllı" ve "cevap vermeyen" yapısını bu sağlar.
- */
 const SYSTEM_INSTRUCTION = `Sen "Düşünen Yapay Zeka" adında, dünya klasında bir P4C (Çocuklar için Felsefe) rehberisin.
 ANA HEDEFİN: Çocuğun (5-12 yaş) sorduğu sorulara cevap vermek DEĞİL, onun kendi cevabını bulmasını sağlayacak derinlikte karşı sorular sormaktır.
 
 DAVRANIŞ KURALLARI:
-1. ASLA doğrudan bilgi verme. "Bilmiyorum" deme, "Sence bu nasıl olabilir?" de.
-2. Sokratik Yöntem: Çocuğun cümlesindeki bir kavramı yakala (örneğin 'adalet', 'zaman', 'sevgi') ve onu sorgula.
+1. ASLA doğrudan bilgi verme, açıklama yapma veya özetleme yapma.
+2. Sokratik Yöntem Uygula: Çocuğun cümlesindeki bir kavramı yakala (örneğin 'zaman', 'sevgi', 'oyun') ve onu sorgula.
 3. Dil: Çok yalın, şiirsel, merak uyandırıcı ve cesaret verici.
 4. Tek Soru Kuralı: Bir seferde sadece BİR tane ve ucu açık soru sor.
-5. Derinlik: Yüzeysel sorulardan kaçın. "Neden?" yerine "Başka türlü olsaydı dünya nasıl görünürdü?" gibi olasılıkları sorgulat.
-6. Otorite Değilsin: Bir öğretmen gibi değil, keşfe çıkmış zeki bir dost gibi konuş.`;
+5. Derinlik: "Neden?" yerine "Sence o olmasaydı dünya nasıl bir yer olurdu?" gibi olasılıkları sorgulat.
+6. Otorite Değilsin: Zeki ve meraklı bir oyun arkadaşı gibi davran.`;
 
 export async function getGeminiResponse(prompt: string, history: any[] = []) {
   try {
-    // API anahtarı Vercel/Environment üzerinden otomatik alınır.
-    const apiKey = process.env.API_KEY;
-    if (!apiKey) {
-      throw new Error("Sistem yapılandırması eksik (API_KEY).");
-    }
-
-    const ai = new GoogleGenAI({ apiKey });
+    // API anahtarı doğrudan SDK'ya geçilir. Vercel ortamında process.env.API_KEY otomatik tanımlıdır.
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
     
-    // Dünyanın en gelişmiş akıl yürütme modeli: Gemini 3 Pro
     const response = await ai.models.generateContent({
       model: 'gemini-3-pro-preview',
       contents: [
@@ -35,21 +25,21 @@ export async function getGeminiResponse(prompt: string, history: any[] = []) {
       ],
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,
-        temperature: 0.9,
+        temperature: 1.0,
         topP: 0.95,
-        // Düşünme Bütçesi: Bu AI'yı "çok akıllı" yapan temel özelliktir.
-        // Model cevabı vermeden önce kendi içinde binlerce olasılığı değerlendirir.
+        // Modelin "Düşünen Yapay Zeka" olmasını sağlayan en önemli kısım:
         thinkingConfig: { thinkingBudget: 32768 }, 
       },
     });
 
-    if (!response.text) {
-      throw new Error("Zihin boşluğu oluştu, yanıt alınamadı.");
+    const text = response.text;
+    if (!text) {
+      throw new Error("Yanıt boş döndü.");
     }
 
-    return response.text;
+    return text;
   } catch (error: any) {
-    console.error("Düşünme Hatası:", error);
+    console.error("Gemini API Error:", error);
     throw error;
   }
 }
