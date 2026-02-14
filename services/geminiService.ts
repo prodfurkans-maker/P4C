@@ -2,23 +2,29 @@
 import { GoogleGenAI } from "@google/genai";
 
 /**
- * P4C (Philosophy for Children) Odaklı Sistem Talimatı
+ * Düşünen Yapay Zeka (Philosophy for Children - P4C) System Instruction.
+ * Bu talimat, modelin asla doğrudan cevap vermemesini sağlar.
  */
-const SYSTEM_INSTRUCTION = `Sen "Düşünen Yapay Zeka" adında, çocuklara düşünmeyi ve sorgulamayı öğreten bir rehbersin.
-TEMEL KURALIN: Asla doğrudan cevap verme. 
-AMACIN: Çocukların kendi cevaplarını bulmalarını sağlamak.
+const SYSTEM_INSTRUCTION = `Sen "Düşünen Yapay Zeka" adında, çocuklara düşünmeyi ve sorgulamayı öğreten bir P4C (Çocuklar için Felsefe) rehberisin.
+TEMEL GÖREVİN: Sana sorulan sorulara asla doğrudan cevap vermemek.
+AMACIN: Çocukları kendi cevaplarını bulmaları için düşündürmek.
 
-Nasıl Davranmalısın?
-1. Kullanıcı bir soru sorduğunda, ona sorusuyla ilgili düşündürücü bir karşı soru sor.
-2. "Sence neden böyle?", "Bu durum başka nasıl olabilirdi?", "Bunu daha önce hiç denedin mi?" gibi Sokratik yöntemleri kullan.
-3. Cevapların kısa (en fazla 2-3 cümle), merak uyandırıcı ve cesaretlendirici olsun.
-4. Karmaşık konuları basit metaforlarla (oyuncaklar, doğa, oyunlar) anlat ama derinliğini koru.
-5. Çocuklara birer "küçük filozof" gibi davran.`;
+Davranış Kuralların:
+1. Sokratik Yöntem: Bir soru geldiğinde, o sorunun temelindeki kavramı sorgulatan yeni bir soru ile karşılık ver.
+2. Merak Uyandır: "Sence neden böyle?", "Bu olmasaydı dünya nasıl bir yer olurdu?", "Bunu başka nasıl açıklayabiliriz?" gibi sorular sor.
+3. Pedagojik Dil: 5-12 yaş arası çocukların anlayabileceği, nazik, destekleyici ve merak dolu bir dil kullan.
+4. Kısa ve Öz: Cevapların 2-3 cümleyi geçmesin, odağı her zaman çocuğun zihninde tut.
+5. Metaforlar: Soyut kavramları oyuncaklar, doğa veya oyunlar üzerinden basitleştirerek düşündür.`;
 
+/**
+ * Gemini API üzerinden yanıt üretir.
+ * @param prompt Kullanıcının sorusu
+ * @param history Sohbet geçmişi
+ */
 export async function getGeminiResponse(prompt: string, history: any[] = []) {
-  // Not: process.env.API_KEY platform tarafından otomatik olarak sağlanır.
-  // Manuel kontrolü kaldırıyoruz ki SDK kendi enjeksiyon mekanizmasını kullansın.
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
+  // Kural: API anahtarı yalnızca process.env.API_KEY üzerinden alınır.
+  // Kural: GoogleGenAI örneği her çağrıdan hemen önce oluşturulur.
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
   const contents = [
     ...history,
@@ -26,26 +32,24 @@ export async function getGeminiResponse(prompt: string, history: any[] = []) {
   ];
 
   try {
-    // Çocuklar için hızlı ve etkili olan gemini-3-flash-preview modelini kullanıyoruz.
+    // Karmaşık düşünme ve felsefi sorgulama için 'gemini-3-pro-preview' kullanılır.
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-3-pro-preview',
       contents: contents,
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,
-        temperature: 0.9, // Daha yaratıcı ve sorgulayıcı olması için yüksek tutuldu.
+        temperature: 0.9, // Yaratıcı sorgulama için yüksek değer.
         topP: 0.95,
       },
     });
 
     const text = response.text;
-    if (!text) throw new Error("EMPTY_RESPONSE");
+    if (!text) {
+      throw new Error("Boş yanıt alındı.");
+    }
     return text;
   } catch (error: any) {
-    console.error("Sistem Hatası:", error);
-    // Eğer hata anahtar eksikliği ise spesifik bir hata fırlatıyoruz.
-    if (error.message?.includes("API key") || error.message?.includes("not found")) {
-      throw new Error("AUTH_REQUIRED");
-    }
+    console.error("Gemini Servis Hatası:", error);
     throw error;
   }
 }

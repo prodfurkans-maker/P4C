@@ -23,7 +23,6 @@ const CodeLogo = ({ className = "h-12 w-12" }: { className?: string }) => (
 const App: React.FC = () => {
   const [isStarted, setIsStarted] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [showConnectButton, setShowConnectButton] = useState(false);
   
   const [sessions, setSessions] = useState<ChatSession[]>(() => {
     const saved = localStorage.getItem('CHAT_SESSIONS');
@@ -56,7 +55,7 @@ const App: React.FC = () => {
       messages: [{
         id: 'welcome',
         role: 'bot',
-        text: 'Hoş geldin küçük filozof! Zihnindeki en büyük "Neden?" sorusu nedir? Merak ediyorum...',
+        text: 'Merhaba zihin ortağım! Bugün birlikte hangi merak dolu "Acaba?" sorusunun peşinden gidelim istersin?',
         timestamp: Date.now(),
       }],
       updatedAt: Date.now(),
@@ -65,19 +64,6 @@ const App: React.FC = () => {
     setCurrentSessionId(newSession.id);
     setIsStarted(true);
     setIsSidebarOpen(false);
-  };
-
-  const handleConnect = async () => {
-    try {
-      const aistudio = (window as any).aistudio;
-      if (aistudio && typeof aistudio.openSelectKey === 'function') {
-        await aistudio.openSelectKey();
-        setShowConnectButton(false);
-        alert("Bağlantı sağlandı! Şimdi tekrar sorabilirsin.");
-      }
-    } catch (e) {
-      console.error("Bağlantı tetiklenemedi");
-    }
   };
 
   const handleSend = async (e?: React.FormEvent) => {
@@ -104,7 +90,7 @@ const App: React.FC = () => {
     try {
       const history = messages
         .filter(msg => msg.id !== 'welcome')
-        .slice(-6)
+        .slice(-10)
         .map(msg => ({
           role: msg.role === 'bot' ? 'model' : 'user',
           parts: [{ text: msg.text }]
@@ -123,16 +109,11 @@ const App: React.FC = () => {
         s.id === currentSessionId ? { ...s, messages: [...s.messages, botMessage], updatedAt: Date.now() } : s
       ));
     } catch (error: any) {
-       console.error("Hata Detayı:", error);
-       
-       if (error.message === "AUTH_REQUIRED") {
-         setShowConnectButton(true);
-       }
-
+       console.error("Gönderim Hatası:", error);
        const errorBotMsg: Message = {
          id: Date.now().toString(),
          role: 'bot',
-         text: "Üzgünüm, şu an zihnimi toparlayamadım. Küçük bir bağlantı sorunu yaşıyorum gibi görünüyor.",
+         text: "Üzgünüm, şu an bağlantı kuramıyorum. Lütfen internetini kontrol edip tekrar dener misin?",
          timestamp: Date.now(),
        };
        setSessions(prev => prev.map(s => 
@@ -183,7 +164,7 @@ const App: React.FC = () => {
         </div>
 
         <footer className="w-full text-center py-12 z-10">
-          <p className="text-[11px] text-indigo-400 font-black tracking-[0.3em] uppercase">P4C Metodolojisi Gücüyle</p>
+          <p className="text-[11px] text-indigo-400 font-black tracking-[0.3em] uppercase">© 2024 NextGenLAB · P4C Metodolojisi</p>
         </footer>
       </div>
     );
@@ -208,14 +189,14 @@ const App: React.FC = () => {
 
         <div className="p-4 flex-1 overflow-y-auto space-y-2 custom-scrollbar">
           <button onClick={startNewChat} className="w-full flex items-center gap-3 p-4 bg-indigo-600/10 border border-indigo-600/20 rounded-2xl text-indigo-400 font-black text-[11px] hover:bg-indigo-600/20 transition-all mb-4 uppercase tracking-[0.2em]">
-            Yeni Yolculuk
+            Yeni Sorgulama Başlat
           </button>
 
           {sessions.map(s => (
             <button 
               key={s.id}
               onClick={() => { setCurrentSessionId(s.id); setIsSidebarOpen(false); }}
-              className={`w-full text-left p-4 rounded-2xl transition-all border text-xs font-bold ${currentSessionId === s.id ? 'bg-indigo-600/15 border-indigo-600/30 text-white' : 'border-transparent text-slate-500 hover:bg-white/5 hover:text-slate-200'}`}
+              className={`w-full text-left p-4 rounded-2xl transition-all border text-xs font-bold ${currentSessionId === s.id ? 'bg-indigo-600/15 border-indigo-600/30 text-white shadow-lg shadow-indigo-500/10' : 'border-transparent text-slate-500 hover:bg-white/5 hover:text-slate-200'}`}
             >
               # {s.title}
             </button>
@@ -226,7 +207,7 @@ const App: React.FC = () => {
       <div className="flex-1 flex flex-col relative bg-[#020617]/40">
         <header className="glass p-5 flex items-center justify-between z-20 border-b border-white/5">
           <div className="flex items-center gap-4">
-            <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden p-2 rounded-xl glass border-white/10 text-slate-400">
+            <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden p-2 rounded-xl glass border-white/10 text-slate-400 active:scale-95 transition-transform">
                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
               </svg>
@@ -234,44 +215,50 @@ const App: React.FC = () => {
             <Avatar />
             <div>
               <h1 className="text-lg font-black text-white uppercase tracking-tight">Düşünen Dostum</h1>
-              <p className="text-[9px] text-indigo-400 font-black uppercase tracking-[0.3em]">Aktif Zihin Modu</p>
+              <p className="text-[9px] text-indigo-400 font-black uppercase tracking-[0.3em]">Pedagojik Mod Aktif</p>
             </div>
           </div>
-          {showConnectButton && (
-            <button onClick={handleConnect} className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-2 rounded-full text-[10px] font-black uppercase animate-pulse">
-              Bağlantıyı Yenile
-            </button>
-          )}
+          <button onClick={() => setIsStarted(false)} className="p-2.5 rounded-xl hover:bg-white/10 text-slate-500 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </header>
 
         <main className="flex-1 overflow-y-auto p-5 md:p-10 space-y-10 custom-scrollbar pb-40">
           {!currentSessionId ? (
-            <div className="h-full flex flex-col items-center justify-center opacity-20 uppercase tracking-[0.5em] font-black text-sm">Sorgula</div>
+            <div className="h-full flex flex-col items-center justify-center opacity-20 uppercase tracking-[0.5em] font-black text-sm animate-pulse">
+               Zihin Yolculuğu Hazır
+            </div>
           ) : (
             messages.map((msg) => <ChatMessage key={msg.id} message={msg} />)
           )}
           {isLoading && (
             <div className="flex justify-start">
-              <div className="glass px-6 py-4 rounded-[2rem] flex items-center gap-4 animate-pulse">
-                <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
-                <span className="text-[10px] text-indigo-300 font-black uppercase tracking-[0.3em]">Zihin Derinliklerinde...</span>
+              <div className="glass px-6 py-4 rounded-[2rem] flex items-center gap-4 border-l-2 border-indigo-500 shadow-xl">
+                <div className="flex gap-1.5">
+                  <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce"></div>
+                  <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce delay-100"></div>
+                  <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce delay-200"></div>
+                </div>
+                <span className="text-[9px] text-indigo-300 font-black uppercase tracking-[0.3em]">Analiz Ediliyor...</span>
               </div>
             </div>
           )}
           <div ref={messagesEndRef} />
         </main>
 
-        <div className="absolute bottom-0 left-0 w-full p-6 bg-gradient-to-t from-[#020617] to-transparent">
-          <form onSubmit={handleSend} className="max-w-4xl mx-auto flex items-center gap-3 p-2 bg-white/[0.05] border border-white/10 rounded-[2.5rem] backdrop-blur-xl">
+        <div className="absolute bottom-0 left-0 w-full p-6 bg-gradient-to-t from-[#020617] via-[#020617]/90 to-transparent pt-20">
+          <form onSubmit={handleSend} className="max-w-4xl mx-auto flex items-center gap-3 p-2 bg-white/[0.05] border border-white/10 rounded-[2.5rem] backdrop-blur-xl shadow-2xl focus-within:border-indigo-500/50 transition-all">
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Zihnini kurcalayan nedir?"
-              className="flex-1 bg-transparent py-4 px-6 outline-none text-white placeholder:text-white/30 text-lg font-medium"
+              placeholder="Neyi merak ediyorsun?"
+              className="flex-1 bg-transparent py-4 px-6 outline-none text-white placeholder:text-white/20 text-lg font-medium"
               disabled={isLoading}
             />
-            <button type="submit" disabled={isLoading || !input.trim()} className="bg-indigo-600 text-white p-4 rounded-full hover:bg-indigo-500 transition-all disabled:opacity-20 active:scale-90">
+            <button type="submit" disabled={isLoading || !input.trim()} className="bg-indigo-600 text-white p-4 rounded-full hover:bg-indigo-500 transition-all disabled:opacity-20 active:scale-90 shadow-lg shadow-indigo-600/30">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-6 h-6">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
               </svg>
