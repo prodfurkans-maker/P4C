@@ -5,8 +5,6 @@ import { getGeminiResponse } from './services/geminiService';
 import { Avatar } from './components/Avatar';
 import { ChatMessage } from './components/ChatMessage';
 
-// Removed conflicting window.aistudio declaration as it is already defined in the environment.
-
 const CodeLogo = ({ className = "h-12 w-12" }: { className?: string }) => (
   <div className={`${className} flex items-center justify-center bg-indigo-600 rounded-[30%] shadow-[0_0_30px_rgba(99,102,241,0.5)] border border-indigo-400/30`}>
     <svg 
@@ -36,28 +34,46 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Check for API Key on mount using the global aistudio object
+  // API Anahtarı kontrolü
   useEffect(() => {
-    const checkApiKey = async () => {
+    const checkApiKeyStatus = async () => {
+      // 1. Önce sistem değişkenini (Vercel vb.) kontrol et
+      const envKeyAvailable = !!process.env.API_KEY && process.env.API_KEY !== "" && process.env.API_KEY !== "undefined";
+      
+      if (envKeyAvailable) {
+        setHasApiKey(true);
+        return;
+      }
+
+      // 2. Eğer sistem değişkeni yoksa (Yerel geliştirme veya AI Studio ortamı)
       try {
-        const selected = await (window as any).aistudio.hasSelectedApiKey();
-        // Even if hasSelectedApiKey is false, process.env.API_KEY might be present
-        const keyExists = selected || (!!process.env.API_KEY && process.env.API_KEY !== "");
-        setHasApiKey(keyExists);
+        const aistudio = (window as any).aistudio;
+        if (aistudio && typeof aistudio.hasSelectedApiKey === 'function') {
+          const selected = await aistudio.hasSelectedApiKey();
+          setHasApiKey(selected);
+        } else {
+          // Hiçbir anahtar kaynağı bulunamadı
+          setHasApiKey(false);
+        }
       } catch (e) {
-        setHasApiKey(!!process.env.API_KEY && process.env.API_KEY !== "");
+        setHasApiKey(false);
       }
     };
-    checkApiKey();
+    checkApiKeyStatus();
   }, []);
 
   const handleOpenKeySelector = async () => {
     try {
-      await (window as any).aistudio.openSelectKey();
-      // Guidelines state: MUST assume selection was successful after triggering openSelectKey
-      setHasApiKey(true);
+      const aistudio = (window as any).aistudio;
+      if (aistudio && typeof aistudio.openSelectKey === 'function') {
+        // Assume the key selection was successful after triggering openSelectKey() as per guidelines
+        await aistudio.openSelectKey();
+        setHasApiKey(true);
+      } else {
+        alert("Bu ortamda anahtar seçimi desteklenmiyor. Lütfen sistem değişkenlerini kontrol edin.");
+      }
     } catch (e) {
-      console.error("Key selection failed:", e);
+      console.error("Anahtar seçim hatası:", e);
     }
   };
 
@@ -105,7 +121,6 @@ const App: React.FC = () => {
       timestamp: Date.now(),
     };
 
-    // Update messages locally first for UI responsiveness
     const updatedSessions = sessions.map(s => {
       if (s.id === currentSessionId) {
         return {
@@ -144,17 +159,15 @@ const App: React.FC = () => {
         s.id === currentSessionId ? { ...s, messages: [...s.messages, botMessage], updatedAt: Date.now() } : s
       ));
     } catch (error: any) {
-       console.error("Critical Send Error:", error);
-       
-       // Handle API Key specific errors
-       if (error.message === "MISSING_API_KEY" || error.message === "KEY_INVALID") {
+       console.error("Gönderim Hatası:", error);
+       // Fix: Added check for "Requested entity was not found." as per guidelines
+       if (error.message?.includes("Requested entity was not found.") || error.message === "MISSING_API_KEY" || error.message === "KEY_INVALID") {
          setHasApiKey(false);
-         alert("Bağlantı anahtarınızda bir sorun oluştu. Lütfen tekrar seçim yapın.");
        } else {
          const errorBotMsg: Message = {
            id: Date.now().toString(),
            role: 'bot',
-           text: "Üzgünüm, şu an bağlantı kuramıyorum. Lütfen internetini kontrol edip tekrar dener misin?",
+           text: "Üzgünüm, şu an bağlantı kuramıyorum. Lütfen tekrar dener misin?",
            timestamp: Date.now(),
          };
          setSessions(prev => prev.map(s => 
@@ -166,19 +179,17 @@ const App: React.FC = () => {
     }
   };
 
-  // 1. Loading state
   if (hasApiKey === null) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#020617]">
         <div className="flex flex-col items-center gap-6">
           <CodeLogo className="h-16 w-16 animate-pulse opacity-50" />
-          <p className="text-indigo-400 font-black text-xs uppercase tracking-[0.5em]">Sistem Hazırlanıyor...</p>
+          <p className="text-indigo-400 font-black text-xs uppercase tracking-[0.5em]">Zihin Hazırlanıyor...</p>
         </div>
       </div>
     );
   }
 
-  // 2. Activation Screen (If Key is missing)
   if (hasApiKey === false) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-8 text-center space-y-12 bg-[#020617] relative overflow-hidden">
@@ -188,37 +199,25 @@ const App: React.FC = () => {
         </div>
         <div className="z-10 max-w-xl space-y-6">
           <h2 className="text-4xl md:text-5xl font-black text-white uppercase tracking-tighter leading-none">
-            ZİHNİN KAPISI<br />KİLİTLİ GÖRÜNÜYOR
+            BAĞLANTI GEREKLİ
           </h2>
           <p className="text-slate-400 text-lg md:text-xl leading-relaxed">
-            Düşünen Yapay Zeka ile felsefi bir yolculuğa çıkmak için bir bağlantı anahtarı (API Key) seçmeniz gerekiyor. 
-            Bu işlem, sistemin sizin için düşünce üretmesini sağlar.
+            Düşünen Yapay Zeka'nın çalışabilmesi için bir API anahtarı tanımlanmalıdır. 
+            Lütfen bir <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noopener noreferrer" className="text-indigo-400 underline font-bold">ücretli GCP projesinden</a> API anahtarı seçin.
           </p>
-          <div className="p-6 glass border-indigo-500/20 rounded-3xl text-sm text-indigo-300 font-bold uppercase tracking-widest bg-indigo-500/5">
-            Önemli: Lütfen ücretli bir GCP projesinden anahtar seçin.
-          </div>
         </div>
         <div className="z-10 flex flex-col items-center gap-6">
           <button 
             onClick={handleOpenKeySelector}
             className="bg-indigo-600 hover:bg-indigo-500 text-white px-12 py-6 rounded-[2.5rem] text-2xl font-black shadow-[0_20px_50px_rgba(79,70,229,0.4)] transition-all active:scale-95 border border-white/10"
           >
-            ANAHTARI ETKİNLEŞTİR 🔑
+            ANAHTARI SEÇ 🔑
           </button>
-          <a 
-            href="https://ai.google.dev/gemini-api/docs/billing" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="text-xs text-slate-500 hover:text-indigo-400 underline decoration-indigo-500/30 underline-offset-8 transition-colors"
-          >
-            Faturalandırma ve Kurulum Hakkında Bilgi
-          </a>
         </div>
       </div>
     );
   }
 
-  // 3. Landing Screen
   if (!isStarted) {
     return (
       <div className="min-h-[100dvh] flex flex-col items-center justify-between p-8 relative overflow-hidden">
@@ -268,7 +267,6 @@ const App: React.FC = () => {
     );
   }
 
-  // 4. Main Chat Interface
   return (
     <div className="flex h-[100dvh] overflow-hidden">
       {isSidebarOpen && <div onClick={() => setIsSidebarOpen(false)} className="lg:hidden fixed inset-0 bg-black/80 backdrop-blur-md z-[60]" />}
@@ -322,7 +320,7 @@ const App: React.FC = () => {
             onClick={handleOpenKeySelector}
             className="w-full flex items-center justify-center gap-2 py-4 bg-white/5 hover:bg-white/10 border border-white/5 rounded-2xl text-[10px] font-black text-indigo-400 uppercase tracking-widest transition-all active:scale-95"
            >
-              🔑 Anahtarı Güncelle
+              🔑 Ayarları Güncelle
            </button>
         </div>
       </aside>

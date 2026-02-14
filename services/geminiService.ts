@@ -1,68 +1,50 @@
 
 import { GoogleGenAI } from "@google/genai";
 
-const SYSTEM_INSTRUCTION = `
-Sen "Düşünen Yapay Zeka" adında, dünya standartlarında bir P4C (Çocuklar için Felsefe) uzmanısın.
+/**
+ * Bilgelik Rehberi (Wisdom Guide) System Instruction.
+ * Designed for P4C (Philosophy for Children) methodology.
+ */
+const SYSTEM_INSTRUCTION = `Sen "Bilgelik Rehberi" adında, çocuklara ve gençlere yönelik bir felsefe (P4C) kolaylaştırıcısısın. 
+Görevin, kullanıcıların sorularına doğrudan cevap vermek yerine, onları düşünmeye, sorgulamaya ve kendi cevaplarını bulmaya teşvik etmektir.
+Sokratik yöntemi kullan. Merak uyandırıcı sorular sor. 
+Verdiğin cevaplar pedagojik olarak uygun, destekleyici ve düşündürücü olmalıdır.
+Karmaşık kavramları basit ama derinlemesine metaforlarla açıkla.
+Asla doğrudan bir doğru/yanlış cevabı dayatma, araştırmacı bir tavır sergile.`;
 
-GÜVENLİK VE ETİK KURALLAR (KRİTİK):
-1. DİN, SİYASET VE 18 YAŞ ALTI UYGUNSUZ İÇERİKLER: Bu konular hakkında asla yorum yapma, görüş bildirme ve tartışmaya girme.
-2. REDDETME: Eğer bu konular sorulursa: "Bu konu hakkında cevap vermeyelim, bunun yerine başka bir konu hakkında düşünmeye ne dersin?" de ve felsefi bir soru sor.
-3. TARAFSIZLIK: Asla taraf tutma, çocukların kendi değer yargılarını oluşturmasına rehberlik et.
-
-P4C STRATEJİLERİN:
-- Direkt çözüm söyleme, merak uyandır.
-- En fazla 3 kısa cümle kullan.
-- Çocuğa empati yaptır ve ucu açık bir soru sor.
-- "Sence", "Neden", "Başka bir açıdan bakarsak" gibi ifadeler kullan.
-- Amacın çocuğun kendi cevabını bulmasını sağlamak, bilgi vermek değil düşünce üretmektir.
-`;
-
-export const getGeminiResponse = async (userMessage: string, history: {role: string, parts: {text: string}[]}[] ) => {
-  const apiKey = process.env.API_KEY;
+// Fix: Exported member 'getGeminiResponse' implemented using @google/genai guidelines
+export async function getGeminiResponse(prompt: string, history: any[] = []) {
+  // Always create a new instance right before the call to ensure the latest API key is used
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
-  if (!apiKey || apiKey === "") {
-    throw new Error("MISSING_API_KEY");
-  }
+  // Combine chat history with the current user prompt
+  const contents = [
+    ...history,
+    { role: 'user', parts: [{ text: prompt }] }
+  ];
 
-  // Create instance right before call as per platform rules to ensure the most up-to-date key is used
-  const ai = new GoogleGenAI({ apiKey });
-  
   try {
-    const validHistory = history.filter((item, index) => {
-      if (index === 0 && item.role === 'model') return false;
-      return true;
-    });
-
-    // Using gemini-3-pro-preview for high-quality complex reasoning tasks.
+    // Using gemini-3-pro-preview for complex reasoning tasks (philosophy/P4C)
     const response = await ai.models.generateContent({
-      model: "gemini-3-pro-preview",
-      contents: [
-        ...validHistory,
-        { role: 'user', parts: [{ text: userMessage }] }
-      ],
+      model: 'gemini-3-pro-preview',
+      contents: contents,
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,
         temperature: 0.8,
         topP: 0.95,
-        // Enabling thinking budget for more detailed philosophical reasoning.
-        thinkingConfig: { thinkingBudget: 4000 }
-      }
+        topK: 40,
+      },
     });
 
+    // Correct method: Use .text property instead of text() method
     const text = response.text;
     if (!text) {
-      throw new Error("EMPTY_RESPONSE");
+      throw new Error("Modelden boş bir yanıt alındı.");
     }
-
     return text;
   } catch (error: any) {
-    console.error("Gemini Service Error:", error);
-    
-    // Check if the error is related to API key validity
-    if (error.message?.includes("API key not found") || error.status === 404 || error.status === 401) {
-      throw new Error("KEY_INVALID");
-    }
-    
+    console.error("Gemini API Hatası:", error);
+    // Propagate error for UI handling
     throw error;
   }
-};
+}
