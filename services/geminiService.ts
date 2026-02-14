@@ -2,27 +2,23 @@
 import { GoogleGenAI } from "@google/genai";
 
 /**
- * Bilgelik Rehberi (Wisdom Guide) System Instruction.
- * P4C (Philosophy for Children) metodolojisi için optimize edilmiştir.
+ * P4C (Philosophy for Children) Odaklı Sistem Talimatı
  */
-const SYSTEM_INSTRUCTION = `Sen "Düşünen Yapay Zeka" adında, çocuklara felsefeyi sevdiren bir rehbersin.
-Görevin, sorulara doğrudan cevap vermek yerine, onları düşünmeye teşvik etmektir.
-Sokratik yöntemi kullan. Merak uyandırıcı, ucu açık sorular sor.
-Asla doğrudan bir "bu böyledir" cevabı verme. 
-Çocuğun kendi cevabını bulması için ona ayna ol.
-En fazla 3-4 cümlelik, anlaşılır ama derin mesajlar ver.
-Eğer uygunsuz bir konu açılırsa, nazikçe konuyu düşünme ve sorgulama alanına çek.`;
+const SYSTEM_INSTRUCTION = `Sen "Düşünen Yapay Zeka" adında, çocuklara düşünmeyi ve sorgulamayı öğreten bir rehbersin.
+TEMEL KURALIN: Asla doğrudan cevap verme. 
+AMACIN: Çocukların kendi cevaplarını bulmalarını sağlamak.
+
+Nasıl Davranmalısın?
+1. Kullanıcı bir soru sorduğunda, ona sorusuyla ilgili düşündürücü bir karşı soru sor.
+2. "Sence neden böyle?", "Bu durum başka nasıl olabilirdi?", "Bunu daha önce hiç denedin mi?" gibi Sokratik yöntemleri kullan.
+3. Cevapların kısa (en fazla 2-3 cümle), merak uyandırıcı ve cesaretlendirici olsun.
+4. Karmaşık konuları basit metaforlarla (oyuncaklar, doğa, oyunlar) anlat ama derinliğini koru.
+5. Çocuklara birer "küçük filozof" gibi davran.`;
 
 export async function getGeminiResponse(prompt: string, history: any[] = []) {
-  // Platform kuralı: API anahtarı her zaman process.env.API_KEY üzerinden alınmalıdır.
-  // Kural: GoogleGenAI örneği her API çağrısından hemen önce oluşturulmalıdır.
-  const apiKey = process.env.API_KEY;
-
-  if (!apiKey) {
-    throw new Error("API_KEY_NOT_FOUND");
-  }
-
-  const ai = new GoogleGenAI({ apiKey });
+  // Not: process.env.API_KEY platform tarafından otomatik olarak sağlanır.
+  // Manuel kontrolü kaldırıyoruz ki SDK kendi enjeksiyon mekanizmasını kullansın.
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
   
   const contents = [
     ...history,
@@ -30,27 +26,25 @@ export async function getGeminiResponse(prompt: string, history: any[] = []) {
   ];
 
   try {
-    // Genel metin görevleri için 'gemini-3-flash-preview' önerilir.
+    // Çocuklar için hızlı ve etkili olan gemini-3-flash-preview modelini kullanıyoruz.
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: contents,
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,
-        temperature: 0.8,
+        temperature: 0.9, // Daha yaratıcı ve sorgulayıcı olması için yüksek tutuldu.
         topP: 0.95,
       },
     });
 
     const text = response.text;
-    if (!text) {
-      throw new Error("EMPTY_RESPONSE");
-    }
+    if (!text) throw new Error("EMPTY_RESPONSE");
     return text;
   } catch (error: any) {
-    console.error("Gemini API Error details:", error);
-    // "Requested entity was not found" hatası genelde anahtarın henüz aktif olmamasından kaynaklanır.
-    if (error.message?.includes("Requested entity was not found")) {
-      throw new Error("KEY_NOT_READY");
+    console.error("Sistem Hatası:", error);
+    // Eğer hata anahtar eksikliği ise spesifik bir hata fırlatıyoruz.
+    if (error.message?.includes("API key") || error.message?.includes("not found")) {
+      throw new Error("AUTH_REQUIRED");
     }
     throw error;
   }
