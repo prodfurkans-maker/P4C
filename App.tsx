@@ -16,7 +16,6 @@ const CodeLogo = ({ className = "h-12 w-12" }: { className?: string }) => (
 const App: React.FC = () => {
   const [isStarted, setIsStarted] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isAuthNeeded, setIsAuthNeeded] = useState(false);
   
   const [sessions, setSessions] = useState<ChatSession[]>(() => {
     const saved = localStorage.getItem('CHAT_SESSIONS');
@@ -30,25 +29,6 @@ const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('CHAT_SESSIONS', JSON.stringify(sessions));
   }, [sessions]);
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      if ((window as any).aistudio) {
-        const hasKey = await (window as any).aistudio.hasSelectedApiKey();
-        if (!hasKey && !process.env.API_KEY) {
-          setIsAuthNeeded(true);
-        }
-      }
-    };
-    checkAuth();
-  }, []);
-
-  const handleConnect = async () => {
-    if ((window as any).aistudio?.openSelectKey) {
-      await (window as any).aistudio.openSelectKey();
-      setIsAuthNeeded(false);
-    }
-  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -118,19 +98,11 @@ const App: React.FC = () => {
         s.id === currentSessionId ? { ...s, messages: [...s.messages, botMessage], updatedAt: Date.now() } : s
       ));
     } catch (error: any) {
-       console.error("API Hatası:", error);
-       if (error.message === "AUTH_REQUIRED") {
-         setIsAuthNeeded(true);
-       }
-       
-       const errorText = error.message === "AUTH_REQUIRED" 
-         ? "Sisteme güvenli bağlantı gerekiyor. Lütfen yukarıdaki 'Sisteme Bağlan' butonuna tıkla." 
-         : "Zihnim biraz karıştı, tekrar dener misin?";
-
+       console.error("Yolculuk Hatası:", error);
        const errorBotMsg: Message = {
          id: Date.now().toString(),
          role: 'bot',
-         text: errorText,
+         text: error.message || "Zihnim biraz karıştı, tekrar sormaya ne dersin?",
          timestamp: Date.now(),
        };
        setSessions(prev => prev.map(s => 
@@ -150,24 +122,12 @@ const App: React.FC = () => {
         <h1 className="text-5xl md:text-7xl font-black mb-6 text-gradient uppercase tracking-tighter leading-none">DÜŞÜNEN AI</h1>
         <p className="text-xl text-slate-400 mb-12 max-w-md font-light">Kendi cevaplarını bulmaya hazır mısın?</p>
         
-        {isAuthNeeded ? (
-          <div className="flex flex-col items-center gap-4 animate-in fade-in zoom-in duration-500">
-            <button 
-              onClick={handleConnect}
-              className="bg-indigo-600 hover:bg-indigo-500 text-white px-12 py-5 rounded-[2rem] text-xl font-black transition-all shadow-2xl active:scale-95 border border-white/10"
-            >
-              SİSTEME BAĞLAN 🔒
-            </button>
-            <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Güvenli API Bağlantısı Gerekiyor</p>
-          </div>
-        ) : (
-          <button 
-            onClick={() => sessions.length > 0 ? (setCurrentSessionId(sessions[0].id), setIsStarted(true)) : startNewChat()}
-            className="bg-indigo-600 hover:bg-indigo-500 text-white px-12 py-5 rounded-[2rem] text-xl font-black transition-all shadow-2xl active:scale-95 border border-white/10"
-          >
-            KEŞFE BAŞLA 🚀
-          </button>
-        )}
+        <button 
+          onClick={() => sessions.length > 0 ? (setCurrentSessionId(sessions[0].id), setIsStarted(true)) : startNewChat()}
+          className="bg-indigo-600 hover:bg-indigo-500 text-white px-12 py-5 rounded-[2rem] text-xl font-black transition-all shadow-2xl active:scale-95 border border-white/10"
+        >
+          KEŞFE BAŞLA 🚀
+        </button>
       </div>
     );
   }
@@ -201,11 +161,6 @@ const App: React.FC = () => {
               <p className="text-[9px] text-indigo-400 font-black uppercase tracking-widest">P4C Rehber Modu</p>
             </div>
           </div>
-          {isAuthNeeded && (
-            <button onClick={handleConnect} className="bg-amber-500/10 border border-amber-500/30 text-amber-500 px-4 py-2 rounded-full text-[10px] font-black uppercase animate-pulse">
-              Bağlantı Kur
-            </button>
-          )}
           <button onClick={() => setIsStarted(false)} className="p-2.5 rounded-xl hover:bg-white/10 text-slate-500 transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
