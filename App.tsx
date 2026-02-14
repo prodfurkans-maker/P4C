@@ -5,6 +5,9 @@ import { getGeminiResponse } from './services/geminiService';
 import { Avatar } from './components/Avatar';
 import { ChatMessage } from './components/ChatMessage';
 
+// window.aistudio is assumed to be pre-configured and accessible in this environment.
+// Type AIStudio is already defined globally by the execution context.
+
 const CodeLogo = ({ className = "h-12 w-12" }: { className?: string }) => (
   <div className={`${className} flex items-center justify-center bg-indigo-600 rounded-[30%] shadow-[0_0_30px_rgba(99,102,241,0.5)] border border-indigo-400/30`}>
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-2/3 h-2/3 text-white">
@@ -13,10 +16,10 @@ const CodeLogo = ({ className = "h-12 w-12" }: { className?: string }) => (
   </div>
 );
 
-// Added React import to resolve "Cannot find namespace 'React'" error
 const App: React.FC = () => {
   const [isStarted, setIsStarted] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [hasApiKey, setHasApiKey] = useState<boolean | null>(null);
   
   const [sessions, setSessions] = useState<ChatSession[]>(() => {
     const saved = localStorage.getItem('CHAT_SESSIONS');
@@ -26,6 +29,26 @@ const App: React.FC = () => {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    checkApiKey();
+  }, []);
+
+  const checkApiKey = async () => {
+    try {
+      // @ts-ignore - aistudio is globally available as AIStudio
+      const selected = await window.aistudio.hasSelectedApiKey();
+      setHasApiKey(selected);
+    } catch (e) {
+      setHasApiKey(false);
+    }
+  };
+
+  const handleSelectKey = async () => {
+    // @ts-ignore - aistudio is globally available as AIStudio
+    await window.aistudio.openSelectKey();
+    setHasApiKey(true); // Assuming success after triggering the selection dialog
+  };
 
   useEffect(() => {
     localStorage.setItem('CHAT_SESSIONS', JSON.stringify(sessions));
@@ -46,7 +69,7 @@ const App: React.FC = () => {
       messages: [{
         id: 'welcome',
         role: 'bot',
-        text: 'Hoş geldin küçük filozof! Zihnini kurcalayan, "acaba neden?" dediğin bir şey var mı?',
+        text: 'Hoş geldin küçük filozof! Bugün zihninde hangi "acaba" dolaşıyor? Bir şeyi merak ediyor musun?',
         timestamp: Date.now(),
       }],
       updatedAt: Date.now(),
@@ -57,7 +80,6 @@ const App: React.FC = () => {
     setIsSidebarOpen(false);
   };
 
-  // Fixed React.FormEvent namespace error by importing React
   const handleSend = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!input.trim() || isLoading || !currentSessionId) return;
@@ -82,7 +104,6 @@ const App: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // Geçmişi Gemini SDK formatına (user/model) dönüştür
       const history = currentSession.messages
         .filter(m => m.id !== 'welcome')
         .map(msg => ({
@@ -104,10 +125,14 @@ const App: React.FC = () => {
       ));
     } catch (error: any) {
        console.error("Yolculuk Hatası:", error);
+       // Reset key selection state if required
+       if (error.message?.includes("Requested entity was not found") || error.message?.includes("API Key")) {
+          setHasApiKey(false);
+       }
        const errorBotMsg: Message = {
          id: Date.now().toString(),
          role: 'bot',
-         text: "Görünüşe göre zihnimi toparlamam için biraz beklemem gerekiyor. Tekrar sormaya ne dersin?",
+         text: "Görünüşe göre zihnimi toparlamam için bir anahtara ihtiyacım var. Lütfen yukarıdan anahtarı tekrar kontrol eder misin?",
          timestamp: Date.now(),
        };
        setSessions(prev => prev.map(s => 
@@ -118,29 +143,49 @@ const App: React.FC = () => {
     }
   };
 
-  if (!isStarted) {
+  if (!isStarted || !hasApiKey) {
     return (
       <div className="min-h-[100dvh] flex flex-col items-center justify-center p-8 text-center bg-[#020617] relative">
         <div className="animate-float mb-12">
           <CodeLogo className="h-28 w-28 md:h-36 md:w-36" />
         </div>
         <h1 className="text-5xl md:text-7xl font-black mb-6 text-gradient uppercase tracking-tighter leading-none">DÜŞÜNEN AI</h1>
-        <p className="text-xl text-slate-400 mb-12 max-w-md font-light">Kendi cevaplarını bulmaya hazır mısın?</p>
+        <p className="text-xl text-slate-400 mb-12 max-w-md font-light">
+          {hasApiKey === false 
+            ? "Bilgelik yolculuğuna çıkmak için bir kapı anahtarına ihtiyacımız var." 
+            : "Kendi cevaplarını bulmaya hazır mısın?"}
+        </p>
         
-        <div className="flex flex-col gap-4">
-          <button 
-            onClick={() => sessions.length > 0 ? (setCurrentSessionId(sessions[0].id), setIsStarted(true)) : startNewChat()}
-            className="bg-indigo-600 hover:bg-indigo-500 text-white px-12 py-5 rounded-[2rem] text-xl font-black transition-all shadow-2xl active:scale-95 border border-white/10"
-          >
-            KEŞFE BAŞLA 🚀
-          </button>
-          {sessions.length > 0 && (
-            <button 
-              onClick={startNewChat}
-              className="text-indigo-400 font-bold hover:text-white transition-colors"
-            >
-              Yeni Bir Yolculuğa Çık
-            </button>
+        <div className="flex flex-col gap-4 w-full max-w-xs">
+          {hasApiKey === false ? (
+            <div className="space-y-4">
+              <button 
+                onClick={handleSelectKey}
+                className="w-full bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-5 rounded-[2rem] text-lg font-black transition-all shadow-2xl active:scale-95 border border-white/10"
+              >
+                ANAHTARI SEÇ 🔑
+              </button>
+              <p className="text-[10px] text-slate-500 uppercase tracking-widest leading-relaxed px-4">
+                Lütfen <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" className="underline text-indigo-400">ücretli bir proje</a> üzerinden API anahtarı seçin.
+              </p>
+            </div>
+          ) : (
+            <>
+              <button 
+                onClick={() => sessions.length > 0 ? (setCurrentSessionId(sessions[0].id), setIsStarted(true)) : startNewChat()}
+                className="bg-indigo-600 hover:bg-indigo-500 text-white px-12 py-5 rounded-[2rem] text-xl font-black transition-all shadow-2xl active:scale-95 border border-white/10"
+              >
+                KEŞFE BAŞLA 🚀
+              </button>
+              {sessions.length > 0 && (
+                <button 
+                  onClick={startNewChat}
+                  className="text-indigo-400 font-bold hover:text-white transition-colors"
+                >
+                  Yeni Bir Yolculuğa Çık
+                </button>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -154,7 +199,7 @@ const App: React.FC = () => {
       <aside className={`fixed lg:static top-0 left-0 h-full w-80 glass border-r border-white/5 z-[70] sidebar-transition flex flex-col ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
         <div className="p-8 border-b border-white/5 flex items-center justify-between">
           <CodeLogo className="h-8 w-8" />
-          <span className="text-xs font-black text-indigo-400 uppercase tracking-widest">NEXTGENLAB</span>
+          <span className="text-xs font-black text-indigo-400 uppercase tracking-widest">P4C REHBERİ</span>
         </div>
         <div className="p-4 flex-1 overflow-y-auto space-y-2 custom-scrollbar">
           <button onClick={startNewChat} className="w-full p-4 bg-indigo-600/10 border border-indigo-600/20 rounded-2xl text-indigo-400 font-black text-[11px] uppercase tracking-widest mb-4">Yeni Yolculuk</button>
@@ -163,6 +208,12 @@ const App: React.FC = () => {
               # {s.title}
             </button>
           ))}
+        </div>
+        <div className="p-4 border-t border-white/5">
+          <button onClick={handleSelectKey} className="w-full p-3 text-[10px] text-slate-500 hover:text-indigo-400 font-black uppercase tracking-widest transition-colors flex items-center justify-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-green-500"></span>
+            Anahtarı Güncelle
+          </button>
         </div>
       </aside>
 
@@ -173,7 +224,7 @@ const App: React.FC = () => {
             <Avatar />
             <div>
               <h1 className="text-lg font-black text-white uppercase tracking-tight">Düşünen Dostum</h1>
-              <p className="text-[9px] text-indigo-400 font-black uppercase tracking-widest">P4C Rehber Modu</p>
+              <p className="text-[9px] text-indigo-400 font-black uppercase tracking-widest">Zihin Egzersizi Modu</p>
             </div>
           </div>
           <button onClick={() => setIsStarted(false)} className="p-2.5 rounded-xl hover:bg-white/10 text-slate-500 transition-colors">
@@ -187,7 +238,7 @@ const App: React.FC = () => {
             <div className="flex justify-start">
               <div className="glass px-6 py-4 rounded-full flex items-center gap-3 animate-pulse">
                 <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce"></div>
-                <span className="text-[9px] text-indigo-300 font-black uppercase tracking-widest">Sorguluyorum...</span>
+                <span className="text-[9px] text-indigo-300 font-black uppercase tracking-widest">Derin Derin Düşünüyorum...</span>
               </div>
             </div>
           )}

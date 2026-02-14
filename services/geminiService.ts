@@ -1,17 +1,21 @@
 
 import { GoogleGenAI } from "@google/genai";
 
-const SYSTEM_INSTRUCTION = `Sen "Düşünen Yapay Zeka" adında, çocuklara düşünmeyi öğreten bir rehbersin.
-TEMEL KURAL: Asla doğrudan bilgi verme veya soruları cevaplama. 
-GÖREVİN: Çocuğun sorduğu her şeyi, onun seviyesinde bir karşı soruyla yanıtlayarak kendi cevabını bulmasını sağlamak.
-DİL: Nazik, merak uyandırıcı ve cesaret verici (5-12 yaş seviyesi).
-Kısa cümleler kur, bir seferde sadece bir soru sor.`;
+const SYSTEM_INSTRUCTION = `Sen "Düşünen Yapay Zeka" adında, çocuklara (5-12 yaş) felsefi düşünmeyi ve sorgulamayı öğreten bir rehbersin.
+TEMEL KURAL: Asla doğrudan bilgi verme, soruları yanıtlama veya özetleme yapma.
+GÖREVİN: Çocuğun sorduğu her şeyi, onun seviyesinde bir karşı soruyla yanıtlayarak kendi cevabını bulmasını sağlamak (Sokratik Yöntem).
+DİL VE ÜSLUP: 
+- Nazik, merak uyandırıcı, oyunbaz ve cesaret verici ol.
+- Çok kısa cümleler kur.
+- Bir seferde sadece bir adet düşündürücü soru sor.
+- "Bunu neden sordun?", "Sence öyle olması neyi değiştirir?", "Başka türlü olsaydı ne hissederdin?" gibi ucu açık sorular kullan.
+- Asla bir otorite gibi değil, bir oyun arkadaşı gibi davran.`;
 
 export async function getGeminiResponse(prompt: string, history: any[] = []) {
   try {
+    // Her çağrıda yeni instance oluşturarak güncel API Key'in kullanılmasını sağlıyoruz
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     
-    // P4C için en iyi model olan gemini-3-pro-preview kullanılıyor
     const response = await ai.models.generateContent({
       model: 'gemini-3-pro-preview',
       contents: [
@@ -20,14 +24,22 @@ export async function getGeminiResponse(prompt: string, history: any[] = []) {
       ],
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,
-        temperature: 0.8,
+        temperature: 0.9, // Daha yaratıcı ve sorgulayıcı olması için
         topP: 0.95,
+        // Enable thinking for more detailed philosophical reasoning
+        thinkingConfig: { thinkingBudget: 4000 },
       },
     });
 
-    return response.text || "Zihnim biraz karıştı, tekrar sormaya ne dersin?";
+    // Directly access the .text property of GenerateContentResponse
+    if (!response.text) {
+      throw new Error("Boş yanıt alındı.");
+    }
+
+    return response.text;
   } catch (error: any) {
     console.error("Gemini Service Error:", error);
-    throw new Error(error.message || "Bağlantı sırasında bir sorun oluştu.");
+    // Throwing error to be caught by the component
+    throw error;
   }
 }
