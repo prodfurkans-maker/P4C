@@ -20,11 +20,11 @@ P4C STRATEJİLERİN:
 export const getGeminiResponse = async (userMessage: string, history: {role: string, parts: {text: string}[]}[] ) => {
   const apiKey = process.env.API_KEY;
   
-  if (!apiKey) {
+  if (!apiKey || apiKey === "") {
     throw new Error("MISSING_API_KEY");
   }
 
-  // Create instance right before call as per guidelines
+  // Create instance right before call as per platform rules to ensure the most up-to-date key is used
   const ai = new GoogleGenAI({ apiKey });
   
   try {
@@ -33,8 +33,9 @@ export const getGeminiResponse = async (userMessage: string, history: {role: str
       return true;
     });
 
+    // Using gemini-3-pro-preview for high-quality complex reasoning tasks.
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-3-pro-preview",
       contents: [
         ...validHistory,
         { role: 'user', parts: [{ text: userMessage }] }
@@ -43,15 +44,25 @@ export const getGeminiResponse = async (userMessage: string, history: {role: str
         systemInstruction: SYSTEM_INSTRUCTION,
         temperature: 0.8,
         topP: 0.95,
+        // Enabling thinking budget for more detailed philosophical reasoning.
+        thinkingConfig: { thinkingBudget: 4000 }
       }
     });
 
-    return response.text || "Düşüncelerimi toparlayamadım, tekrar sorar mısın?";
+    const text = response.text;
+    if (!text) {
+      throw new Error("EMPTY_RESPONSE");
+    }
+
+    return text;
   } catch (error: any) {
-    console.error("Gemini API Error:", error);
-    if (error.message?.includes("not found") || error.status === 404) {
+    console.error("Gemini Service Error:", error);
+    
+    // Check if the error is related to API key validity
+    if (error.message?.includes("API key not found") || error.status === 404 || error.status === 401) {
       throw new Error("KEY_INVALID");
     }
+    
     throw error;
   }
 };
