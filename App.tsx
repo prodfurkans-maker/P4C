@@ -13,6 +13,7 @@ const CodeLogo = ({ className = "h-12 w-12" }: { className?: string }) => (
   </div>
 );
 
+// Added React import to resolve "Cannot find namespace 'React'" error
 const App: React.FC = () => {
   const [isStarted, setIsStarted] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -41,7 +42,7 @@ const App: React.FC = () => {
   const startNewChat = () => {
     const newSession: ChatSession = {
       id: Date.now().toString(),
-      title: 'Düşünce Yolculuğu',
+      title: 'Yeni Düşünce Yolculuğu',
       messages: [{
         id: 'welcome',
         role: 'bot',
@@ -56,9 +57,13 @@ const App: React.FC = () => {
     setIsSidebarOpen(false);
   };
 
+  // Fixed React.FormEvent namespace error by importing React
   const handleSend = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!input.trim() || isLoading || !currentSessionId) return;
+
+    const currentSession = sessions.find(s => s.id === currentSessionId);
+    if (!currentSession) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -77,9 +82,9 @@ const App: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const currentSession = sessions.find(s => s.id === currentSessionId);
-      const history = (currentSession?.messages || [])
-        .slice(-10)
+      // Geçmişi Gemini SDK formatına (user/model) dönüştür
+      const history = currentSession.messages
+        .filter(m => m.id !== 'welcome')
         .map(msg => ({
           role: msg.role === 'bot' ? 'model' : 'user',
           parts: [{ text: msg.text }]
@@ -102,7 +107,7 @@ const App: React.FC = () => {
        const errorBotMsg: Message = {
          id: Date.now().toString(),
          role: 'bot',
-         text: error.message || "Zihnim biraz karıştı, tekrar sormaya ne dersin?",
+         text: "Görünüşe göre zihnimi toparlamam için biraz beklemem gerekiyor. Tekrar sormaya ne dersin?",
          timestamp: Date.now(),
        };
        setSessions(prev => prev.map(s => 
@@ -122,12 +127,22 @@ const App: React.FC = () => {
         <h1 className="text-5xl md:text-7xl font-black mb-6 text-gradient uppercase tracking-tighter leading-none">DÜŞÜNEN AI</h1>
         <p className="text-xl text-slate-400 mb-12 max-w-md font-light">Kendi cevaplarını bulmaya hazır mısın?</p>
         
-        <button 
-          onClick={() => sessions.length > 0 ? (setCurrentSessionId(sessions[0].id), setIsStarted(true)) : startNewChat()}
-          className="bg-indigo-600 hover:bg-indigo-500 text-white px-12 py-5 rounded-[2rem] text-xl font-black transition-all shadow-2xl active:scale-95 border border-white/10"
-        >
-          KEŞFE BAŞLA 🚀
-        </button>
+        <div className="flex flex-col gap-4">
+          <button 
+            onClick={() => sessions.length > 0 ? (setCurrentSessionId(sessions[0].id), setIsStarted(true)) : startNewChat()}
+            className="bg-indigo-600 hover:bg-indigo-500 text-white px-12 py-5 rounded-[2rem] text-xl font-black transition-all shadow-2xl active:scale-95 border border-white/10"
+          >
+            KEŞFE BAŞLA 🚀
+          </button>
+          {sessions.length > 0 && (
+            <button 
+              onClick={startNewChat}
+              className="text-indigo-400 font-bold hover:text-white transition-colors"
+            >
+              Yeni Bir Yolculuğa Çık
+            </button>
+          )}
+        </div>
       </div>
     );
   }
