@@ -45,7 +45,7 @@ const App: React.FC = () => {
       messages: [{
         id: 'welcome',
         role: 'bot',
-        text: 'Hoş geldin küçük filozof! Bugün zihninde hangi "acaba" dolaşıyor? Bir şeyi merak ediyor musun?',
+        text: 'Merhaba küçük filozof! Zihninde dolaşan, "acaba neden?" dediğin bir şey var mı? Hadi beraber keşfedelim.',
         timestamp: Date.now(),
       }],
       updatedAt: Date.now(),
@@ -104,7 +104,7 @@ const App: React.FC = () => {
        const errorBotMsg: Message = {
          id: Date.now().toString(),
          role: 'bot',
-         text: "Zihnim biraz karıştı gibi... Acaba bu soruyu başka türlü sormak ister miydin?",
+         text: "Şu an düşüncelerim biraz yoğunlaştı... Acaba bu soruyu bana başka bir şekilde anlatabilir misin?",
          timestamp: Date.now(),
        };
        setSessions(prev => prev.map(s => 
@@ -122,21 +122,21 @@ const App: React.FC = () => {
           <CodeLogo className="h-28 w-28 md:h-36 md:w-36" />
         </div>
         <h1 className="text-5xl md:text-7xl font-black mb-6 text-gradient uppercase tracking-tighter leading-none">DÜŞÜNEN AI</h1>
-        <p className="text-xl text-slate-400 mb-12 max-w-md font-light">Kendi cevaplarını bulmaya hazır mısın?</p>
+        <p className="text-xl text-slate-400 mb-12 max-w-md font-light">Türkiye'nin ilk P4C odaklı yapay zeka deneyimi. Kendi cevaplarını bulmaya hazır mısın?</p>
         
         <div className="flex flex-col gap-4 w-full max-w-xs">
           <button 
             onClick={() => sessions.length > 0 ? (setCurrentSessionId(sessions[0].id), setIsStarted(true)) : startNewChat()}
             className="bg-indigo-600 hover:bg-indigo-500 text-white px-12 py-5 rounded-[2rem] text-xl font-black transition-all shadow-2xl active:scale-95 border border-white/10"
           >
-            KEŞFE BAŞLA 🚀
+            YOLCULUĞA BAŞLA ✨
           </button>
           {sessions.length > 0 && (
             <button 
               onClick={startNewChat}
-              className="text-indigo-400 font-bold hover:text-white transition-colors"
+              className="text-indigo-400 font-bold hover:text-white transition-colors uppercase text-[11px] tracking-widest"
             >
-              Yeni Bir Yolculuğa Çık
+              Yeni Bir Düşünce Başlat
             </button>
           )}
         </div>
@@ -150,14 +150,17 @@ const App: React.FC = () => {
       
       <aside className={`fixed lg:static top-0 left-0 h-full w-80 glass border-r border-white/5 z-[70] sidebar-transition flex flex-col ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
         <div className="p-8 border-b border-white/5 flex items-center justify-between">
-          <CodeLogo className="h-8 w-8" />
-          <span className="text-xs font-black text-indigo-400 uppercase tracking-widest">P4C REHBERİ</span>
+          <div className="flex items-center gap-3">
+            <CodeLogo className="h-8 w-8" />
+            <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">NextGenLAB</span>
+          </div>
         </div>
         <div className="p-4 flex-1 overflow-y-auto space-y-2 custom-scrollbar">
-          <button onClick={startNewChat} className="w-full p-4 bg-indigo-600/10 border border-indigo-600/20 rounded-2xl text-indigo-400 font-black text-[11px] uppercase tracking-widest mb-4">Yeni Yolculuk</button>
+          <button onClick={startNewChat} className="w-full p-4 bg-indigo-600 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest mb-6 shadow-lg shadow-indigo-600/20 active:scale-95 transition-all">Yeni Yolculuk</button>
+          <div className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-2 px-4">Önceki Sorgulamalar</div>
           {sessions.map(s => (
-            <button key={s.id} onClick={() => { setCurrentSessionId(s.id); setIsSidebarOpen(false); }} className={`w-full text-left p-4 rounded-2xl text-xs font-bold transition-all ${currentSessionId === s.id ? 'bg-indigo-600/20 border border-indigo-600/30 text-white shadow-lg shadow-indigo-500/10' : 'text-slate-500 hover:bg-white/5'}`}>
-              # {s.title}
+            <button key={s.id} onClick={() => { setCurrentSessionId(s.id); setIsSidebarOpen(false); }} className={`w-full text-left p-4 rounded-2xl text-xs font-bold transition-all border ${currentSessionId === s.id ? 'bg-indigo-600/10 border-indigo-500/30 text-white shadow-xl shadow-indigo-500/5' : 'text-slate-500 border-transparent hover:bg-white/5'}`}>
+              {s.messages[s.messages.length - 1]?.text.substring(0, 30) || s.title}...
             </button>
           ))}
         </div>
@@ -170,7 +173,10 @@ const App: React.FC = () => {
             <Avatar />
             <div>
               <h1 className="text-lg font-black text-white uppercase tracking-tight">Düşünen Dostum</h1>
-              <p className="text-[9px] text-indigo-400 font-black uppercase tracking-widest">Zihin Egzersizi Modu</p>
+              <div className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                <p className="text-[9px] text-indigo-400 font-black uppercase tracking-widest">Derin Akıl Yürütme Aktif</p>
+              </div>
             </div>
           </div>
           <button onClick={() => setIsStarted(false)} className="p-2.5 rounded-xl hover:bg-white/10 text-slate-500 transition-colors">
@@ -182,9 +188,13 @@ const App: React.FC = () => {
           {(sessions.find(s => s.id === currentSessionId)?.messages || []).map((msg) => <ChatMessage key={msg.id} message={msg} />)}
           {isLoading && (
             <div className="flex justify-start">
-              <div className="glass px-6 py-4 rounded-full flex items-center gap-3 animate-pulse">
-                <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce"></div>
-                <span className="text-[9px] text-indigo-300 font-black uppercase tracking-widest">Derin Derin Düşünüyorum...</span>
+              <div className="glass px-6 py-4 rounded-full flex items-center gap-3">
+                <div className="flex gap-1">
+                  <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-[bounce_1s_infinite_0ms]"></div>
+                  <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-[bounce_1s_infinite_200ms]"></div>
+                  <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-[bounce_1s_infinite_400ms]"></div>
+                </div>
+                <span className="text-[9px] text-indigo-300 font-black uppercase tracking-widest">Sokrates gibi düşünüyorum...</span>
               </div>
             </div>
           )}
@@ -197,16 +207,17 @@ const App: React.FC = () => {
               type="text" 
               value={input} 
               onChange={(e) => setInput(e.target.value)} 
-              placeholder="Zihnini kurcalayan ne var?" 
-              className="flex-1 bg-transparent py-4 px-6 outline-none text-white text-lg font-medium placeholder:text-slate-600" 
+              placeholder="Acaba... ?" 
+              className="flex-1 bg-transparent py-4 px-6 outline-none text-white text-lg font-medium placeholder:text-slate-700" 
               disabled={isLoading} 
             />
-            <button type="submit" disabled={isLoading || !input.trim()} className="bg-indigo-600 text-white p-4 rounded-full hover:bg-indigo-500 disabled:opacity-20 active:scale-90 shadow-lg shadow-indigo-600/30">
+            <button type="submit" disabled={isLoading || !input.trim()} className="bg-indigo-600 text-white p-4 rounded-full hover:bg-indigo-500 disabled:opacity-20 active:scale-90 shadow-lg shadow-indigo-600/30 transition-all">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-6 h-6">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
               </svg>
             </button>
           </form>
+          <p className="text-[9px] text-center mt-4 text-slate-700 uppercase tracking-widest font-black">NextGenLAB • P4C Eleştirel Düşünce Platformu</p>
         </div>
       </div>
     </div>
