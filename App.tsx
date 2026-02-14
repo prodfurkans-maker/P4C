@@ -23,7 +23,6 @@ const CodeLogo = ({ className = "h-12 w-12" }: { className?: string }) => (
 const App: React.FC = () => {
   const [isStarted, setIsStarted] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  
   const [sessions, setSessions] = useState<ChatSession[]>(() => {
     const saved = localStorage.getItem('CHAT_SESSIONS');
     return saved ? JSON.parse(saved) : [];
@@ -115,11 +114,19 @@ const App: React.FC = () => {
         s.id === currentSessionId ? { ...s, messages: [...s.messages, botMessage], updatedAt: Date.now() } : s
       ));
     } catch (error: any) {
-       console.error("Gönderim Hatası:", error);
+       console.error("Bağlantı Hatası:", error);
+       let errorMessage = "Üzgünüm, şu an bağlantı kuramıyorum. Lütfen internetini kontrol edip tekrar dener misin?";
+       
+       if (error.message === "API_KEY_NOT_FOUND") {
+         errorMessage = "Sistem yapılandırması eksik (API_KEY bulunamadı). Lütfen geliştirici ayarlarını kontrol edin.";
+       } else if (error.message === "KEY_NOT_READY") {
+         errorMessage = "Bağlantı anahtarı henüz aktifleşmedi, lütfen birkaç saniye sonra tekrar dene.";
+       }
+
        const errorBotMsg: Message = {
          id: Date.now().toString(),
          role: 'bot',
-         text: "Üzgünüm, şu an bağlantı kuramıyorum. Lütfen internetini kontrol edip tekrar dener misin?",
+         text: errorMessage,
          timestamp: Date.now(),
        };
        setSessions(prev => prev.map(s => 
@@ -130,6 +137,7 @@ const App: React.FC = () => {
     }
   };
 
+  // Karşılama Ekranı
   if (!isStarted) {
     return (
       <div className="min-h-[100dvh] flex flex-col items-center justify-between p-8 relative overflow-hidden">
@@ -179,6 +187,7 @@ const App: React.FC = () => {
     );
   }
 
+  // Ana Uygulama Arayüzü
   return (
     <div className="flex h-[100dvh] overflow-hidden">
       {isSidebarOpen && <div onClick={() => setIsSidebarOpen(false)} className="lg:hidden fixed inset-0 bg-black/80 backdrop-blur-md z-[60]" />}
